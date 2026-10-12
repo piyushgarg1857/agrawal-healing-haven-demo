@@ -30,7 +30,7 @@ function Admin() {
   }, []);
   return <><SiteHeader /><PageIntro eyebrow="Clinic administration" title="Admin" description="Bookings, manual UPI verification and service fees." />
     <main id="main-content" tabIndex={-1} className="container section">
-      {!ready ? <p><Loader2 className="inline animate-spin" /> Loading…</p> : session ? <Dashboard email={session.user.email ?? ""} /> : <Login />}
+      {!ready ? <p><Loader2 className="inline animate-spin" /> Loading…</p> : session ? <Dashboard email={session.user.email ?? ""} userId={session.user.id} /> : <Login />}
     </main><SiteFooter /></>;
 }
 
@@ -55,7 +55,7 @@ function Login() {
   </form>;
 }
 
-function Dashboard({ email }: { email: string }) {
+function Dashboard({ email, userId }: { email: string; userId: string }) {
   const [rows, setRows] = useState<Booking[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -63,7 +63,7 @@ function Dashboard({ email }: { email: string }) {
   const [busyId, setBusyId] = useState<Booking["id"] | null>(null);
 
   const [staff, setStaff] = useState<boolean | null>(null);
-  useEffect(() => { isStaff().then(setStaff).catch(() => setStaff(false)); }, []);
+  useEffect(() => { isStaff(userId).then(setStaff).catch(() => setStaff(false)); }, [userId]);
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -89,7 +89,7 @@ function Dashboard({ email }: { email: string }) {
   }
 
   if (staff === null) return <p><Loader2 className="inline animate-spin" /> Checking access…</p>;
-  if (!staff) return <div className="booking-step"><h2>Not authorised</h2><p>This account is not on the clinic staff list. No patient records are shown.</p>
+  if (!staff) return <div className="booking-step"><h2>Not authorised</h2><p>Permission denied: this account is not on the clinic staff list. No patient records are shown.</p>
     <Button variant="outline" onClick={() => void backend().auth.signOut()}><LogOut /> Sign out</Button></div>;
   return <div className="admin-dashboard">
     <div className="hero-actions"><span className="small-note">Signed in as {email}</span>

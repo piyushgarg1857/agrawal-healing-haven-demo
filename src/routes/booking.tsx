@@ -39,6 +39,9 @@ function Booking() {
     }).catch(() => setPriceState("fallback"));
   }, []);
   useEffect(() => { heading.current?.focus(); }, [step]);
+  useEffect(() => {
+    try { const saved = sessionStorage.getItem("physio-booking"); if (saved) { const b = JSON.parse(saved) as { id: string; token: string }; if (b.id && b.token) { setBooking(b); setStep("pay"); } } } catch { /* ignore */ }
+  }, []);
 
   const service = services.find(s => s.id === serviceId) ?? services[0]!;
   const amount = prices[serviceId] ?? service.price;
@@ -52,6 +55,7 @@ function Booking() {
     try {
       const row = await saveBooking({ patient_name: name, patient_email: email, patient_phone: phone, service: serviceId });
       setBooking(row); setStep("pay");
+      try { sessionStorage.setItem("physio-booking", JSON.stringify(row)); } catch { /* optional */ }
     } catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
   }
 
@@ -61,7 +65,7 @@ function Booking() {
     if (!/^[A-Za-z0-9]{6,40}$/.test(ref)) { setError("Enter the UPI transaction reference (letters and numbers, 6–40 characters)."); return; }
     if (!booking) return;
     setBusy(true);
-    try { await submitPaymentReference(booking.id, booking.token, ref); setStep("done"); }
+    try { await submitPaymentReference(booking.id, booking.token, ref); setStep("done"); try { sessionStorage.removeItem("physio-booking"); } catch { /* optional */ } }
     catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
   }
 
@@ -88,7 +92,7 @@ function Booking() {
 
         {step === "pay" && <form onSubmit={submitReference} noValidate>
           <h2 ref={heading} tabIndex={-1}>Pay ₹{amount} by UPI</h2>
-          <p>Your request has been received with status “pending”. It is not confirmed until clinic staff verify your payment.</p>
+          <p>Your booking request has been saved with status “pending”. It is not confirmed until clinic staff verify your payment.</p>
           <div className="payment-explanation"><h3><ShieldCheck /> How to pay</h3>
             <ol><li>Pay <strong>₹{amount}</strong> to UPI ID <strong>{UPI_ID}</strong> ({UPI_PAYEE}).</li><li>Copy the transaction reference (UTR) from your UPI app.</li><li>Enter it below. Staff check it manually — this is not automatic.</li></ol>
             <Button asChild variant="outline"><a href={upiLink}>Open UPI app</a></Button>
@@ -99,7 +103,7 @@ function Booking() {
         </form>}
 
         {step === "done" && <div>
-          <h2 ref={heading} tabIndex={-1}>Reference submitted for manual verification</h2>
+          <h2 ref={heading} tabIndex={-1}>Reference submitted — pending manual verification</h2>
           <p>Thank you. Your payment has <strong>not</strong> been confirmed yet. Clinic staff will check the reference and contact you to confirm your appointment time.</p>
           <div className="hero-actions"><Button asChild variant="outline"><a href="tel:+917046507918"><Phone /> Call the clinic</a></Button></div>
         </div>}
