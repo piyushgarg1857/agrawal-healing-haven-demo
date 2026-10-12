@@ -12,6 +12,9 @@ All booking, payment-reference and admin paths use only the PHYSIO Supabase proj
 - All pages render without errors and without horizontal overflow at 1280px and 390px; booking form validation messages appear.
 - One labelled real booking ("E2E Test - please cancel") reached the payment step and its reference was accepted as pending manual verification.
 
+### Fixed: booking blocked when a staff session exists (2026-10-12)
+Root cause: patient booking calls shared the staff sign-in client. If anyone had signed in on /admin in that browser, the request carried the staff token (role `authenticated`), and that role is intentionally not allowed to run `create_physio_booking`, so the database answered 42501. Fix: patient calls (`create_physio_booking`, `submit_physio_payment_reference`, fee reads) now use a separate anonymous client that never stores a session. Database permissions were not changed. Validation messages from the database (e.g. invalid phone) are now shown as-is.
+
 ### Not yet verified
 - Staff sign-in, bookings list, Mark verified / Cancel, and fee saving as a real `admin_users` member (no staff credentials are available to the build agent).
 - A signed-in non-staff account seeing "Permission denied".
