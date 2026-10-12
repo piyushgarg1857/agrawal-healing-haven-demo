@@ -21,7 +21,7 @@ type Step = "details" | "pay" | "done";
 
 function Booking() {
   const { service: initial } = Route.useSearch();
-  const [serviceId, setServiceId] = useState(services.some(s => s.id === initial) ? initial! : services[0].id);
+  const [serviceId, setServiceId] = useState(services.some(s => s.id === initial) ? initial! : "consultation");
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [priceState, setPriceState] = useState<"loading" | "live" | "fallback">("loading");
   const [step, setStep] = useState<Step>("details");
@@ -40,7 +40,7 @@ function Booking() {
   }, []);
   useEffect(() => { heading.current?.focus(); }, [step]);
 
-  const service = services.find(s => s.id === serviceId)!;
+  const service = services.find(s => s.id === serviceId) ?? services[0]!;
   const amount = prices[serviceId] ?? service.price;
 
   async function submitDetails(e: FormEvent<HTMLFormElement>) {

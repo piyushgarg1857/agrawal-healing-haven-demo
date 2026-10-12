@@ -2,9 +2,9 @@
 // RLS on the hosted project is the security boundary. Never log patient fields.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export const SUPABASE_URL = import.meta.env.VITE_PHYSIO_SUPABASE_URL ?? "https://nohpalyybvjmbryimrrt.supabase.co";
+export const SUPABASE_URL = import.meta.env["VITE_PHYSIO_SUPABASE_URL"] ?? "https://nohpalyybvjmbryimrrt.supabase.co";
 const ANON_KEY =
-  import.meta.env.VITE_PHYSIO_SUPABASE_ANON_KEY ??
+  import.meta.env["VITE_PHYSIO_SUPABASE_ANON_KEY"] ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vaHBhbHl5YnZqbWJyeWltcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODU4ODEsImV4cCI6MjA4MDc2MTg4MX0.zoaaY1qLQ6brdHx-hK5B9alDa721Hpk3yYPLqtCxOBQ";
 
 export const UPI_ID = "8764336371@fam";
