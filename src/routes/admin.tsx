@@ -99,6 +99,7 @@ function Admin() {
                 key={String(text)}
                 variant="ghost"
                 className={tab === text ? "active" : ""}
+                aria-pressed={tab === text}
                 onClick={() => {
                   setTab(String(text));
                   setFilter("All statuses");
@@ -288,9 +289,9 @@ function Admin() {
           </div>
         </div>
       </main>
-      <dialog className="review-dialog" ref={dialog} onClose={() => setSelected(null)}>
+      <dialog className="review-dialog" aria-labelledby="booking-review-title" ref={dialog} onClose={() => setSelected(null)}>
         <div className="dialog-heading">
-          <h2>Booking review</h2>
+          <h2 id="booking-review-title">Booking review</h2>
           <Button
             variant="ghost"
             size="icon"

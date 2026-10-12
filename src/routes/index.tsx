@@ -3,7 +3,6 @@ import {
   ArrowUpRight,
   ArrowRight,
   Check,
-  ShieldCheck,
   HeartHandshake,
   Leaf,
   ClipboardList,
@@ -42,7 +41,7 @@ function Index() {
   return (
     <>
       <SiteHeader />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <section className="hero">
           <img
             className="hero-image"
@@ -54,15 +53,12 @@ function Index() {
           <div className="container hero-content">
             <span className="eyebrow">Care that puts you first</span>
             <h1>
-              Your movement.
-              <br />
-              Your confidence.
-              <br />
-              <em>Our care.</em>
+              Dr. Agrawal’s
+              <span>Physiotherapy<br />Centre.</span>
             </h1>
             <p className="hero-description">
-              At Dr. Agrawal’s Physiotherapy Centre, care begins with listening — and a plan built
-              around you.
+              Your movement. Your confidence. Our care. A thoughtful approach that starts with
+              listening — and a plan shaped around you.
             </p>
             <div className="hero-actions">
               <Button asChild size="lg" className="hero-main">

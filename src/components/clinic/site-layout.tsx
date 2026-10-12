@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowUpRight, Menu, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-motion.png";
@@ -18,16 +18,23 @@ export function Brand() {
 }
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   return (
     <>
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <div className="concept-strip">
-        <span className="status-dot" /> DESIGN CONCEPT <span className="strip-divider">/</span> A
-        thoughtful new direction in care{" "}
+        <span className="status-dot" /> DESIGN CONCEPT
+        <span className="concept-caption">A thoughtful new direction in care</span>
         <Link to="/admin">
           Admin preview <ArrowUpRight size={12} />
         </Link>
       </div>
-      <header className="site-header">
+      <header className="site-header" onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          setOpen(false);
+          menuButton.current?.focus();
+        }
+      }}>
         <div className="header-inner">
           <Brand />
           <nav className="desktop-nav" aria-label="Main navigation">
@@ -46,8 +53,10 @@ export function SiteHeader() {
               variant="ghost"
               size="icon"
               className="mobile-menu"
+              ref={menuButton}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
+              aria-controls="mobile-navigation"
               onClick={() => setOpen(!open)}
             >
               {open ? <X /> : <Menu />}
@@ -55,7 +64,7 @@ export function SiteHeader() {
           </div>
         </div>
         {open && (
-          <nav className="mobile-nav" aria-label="Mobile navigation">
+          <nav id="mobile-navigation" className="mobile-nav" aria-label="Mobile navigation">
             {[
               ["Our services", "services"],
               ["Our approach", "approach"],

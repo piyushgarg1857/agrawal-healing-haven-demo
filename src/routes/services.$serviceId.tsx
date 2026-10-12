@@ -39,11 +39,11 @@ function ServicePage() {
           title="Service not found"
           description="Please explore our available care concepts."
         />
-        <div className="container section">
+        <main id="main-content" tabIndex={-1} className="container section">
           <Button asChild>
             <Link to="/">Back to the clinic</Link>
           </Button>
-        </div>
+        </main>
         <SiteFooter />
       </>
     );
@@ -51,7 +51,7 @@ function ServicePage() {
     <>
       <SiteHeader />
       <PageIntro eyebrow="Our services" title={service.name} description={service.description} />
-      <main className="container service-detail">
+      <main id="main-content" tabIndex={-1} className="container service-detail">
         <div>
           <div className="service-price-note">
             Illustrative session: ₹{service.price.toLocaleString("en-IN")} · {service.duration}{" "}
