@@ -5,6 +5,7 @@ import { Loader2, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
+import { validateFee } from "@/lib/booking-validation";
 import { backend, friendlyError, getAllBookings, getPrices, isStaff, savePrices, updateBookingStatus, type Booking, type BookingStatus } from "@/lib/physio-backend";
 
 export const Route = createFileRoute("/admin")({
@@ -63,7 +64,13 @@ function Dashboard({ email, userId }: { email: string; userId: string }) {
   const [busyId, setBusyId] = useState<Booking["id"] | null>(null);
 
   const [staff, setStaff] = useState<boolean | null>(null);
-  useEffect(() => { isStaff(userId).then(setStaff).catch(() => setStaff(false)); }, [userId]);
+  const [accessError, setAccessError] = useState<string | null>(null);
+  const [savingFees, setSavingFees] = useState(false);
+  const checkAccess = useCallback(() => {
+    setAccessError(null); setStaff(null);
+    isStaff(userId).then(setStaff).catch(err => setAccessError(friendlyError(err)));
+  }, [userId]);
+  useEffect(() => { checkAccess(); }, [checkAccess]);
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -84,10 +91,14 @@ function Dashboard({ email, userId }: { email: string; userId: string }) {
   async function onSavePrices(e: FormEvent) {
     e.preventDefault(); setNotice(null); setError(null);
     const list = services.map(s => ({ service: s.id, price: Number(prices[s.id]) }));
-    if (list.some(r => !Number.isFinite(r.price) || r.price <= 0)) { setError("Each fee must be a positive number."); return; }
-    try { await savePrices(list); setNotice("Fees saved."); } catch (err) { setError(friendlyError(err)); }
+    if (services.some(s => !validateFee(prices[s.id] ?? ""))) { setError("Each fee must be a whole number of rupees between 1 and 100000."); return; }
+    setSavingFees(true);
+    try { await savePrices(list); setNotice("Fees saved."); } catch (err) { setError(friendlyError(err)); } finally { setSavingFees(false); }
   }
 
+  if (accessError) return <div className="booking-step"><h2>Could not check access</h2><p role="alert" className="form-error">{accessError}</p>
+    <div className="hero-actions"><Button onClick={checkAccess}><RefreshCw /> Try again</Button>
+    <Button variant="outline" onClick={() => void backend().auth.signOut()}><LogOut /> Sign out</Button></div></div>;
   if (staff === null) return <p><Loader2 className="inline animate-spin" /> Checking access…</p>;
   if (!staff) return <div className="booking-step"><h2>Not authorised</h2><p>Permission denied: this account is not on the clinic staff list. No patient records are shown.</p>
     <Button variant="outline" onClick={() => void backend().auth.signOut()}><LogOut /> Sign out</Button></div>;
@@ -112,7 +123,7 @@ function Dashboard({ email, userId }: { email: string; userId: string }) {
         </tr>)}</tbody></table></div>}
     <form onSubmit={onSavePrices}><h2>Service fees (₹)</h2>
       <div className="form-grid">{services.map(s => <label key={s.id}><span className="field-label">{s.name}</span>
-        <input className="form-control" type="number" min={1} value={prices[s.id] ?? ""} onChange={e => setPrices(p => ({ ...p, [s.id]: e.target.value }))} /></label>)}</div>
-      <Button type="submit">Save fees</Button></form>
+        <input className="form-control" type="number" min={1} step={1} inputMode="numeric" value={prices[s.id] ?? ""} onChange={e => setPrices(p => ({ ...p, [s.id]: e.target.value }))} /></label>)}</div>
+      <Button type="submit" disabled={savingFees}>{savingFees && <Loader2 className="animate-spin" />} Save fees</Button></form>
   </div>;
 }

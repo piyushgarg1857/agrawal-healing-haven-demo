@@ -30,6 +30,8 @@ export function friendlyError(e: unknown): string {
   if (/fetch|network|Failed to fetch|resolve/i.test(msg)) return "The clinic system could not be reached. Please call the clinic or try again later.";
   if (code === "42501" || /permission|row-level security|policy/i.test(msg)) return "This action is not permitted by the clinic system's security settings.";
   if (/Invalid login/i.test(msg)) return "Email or password is incorrect.";
+  if (/Email not confirmed/i.test(msg)) return "This staff account's email has not been confirmed yet.";
+  if (/rate limit|too many/i.test(msg)) return "Too many attempts. Please wait a few minutes and try again.";
   return "Something went wrong. Please try again or contact the clinic.";
 }
 
@@ -55,10 +57,13 @@ export async function submitPaymentReference(id: string, token: string, referenc
   if (data === false) throw Object.assign(new Error("permission"), { code: "42501" });
 }
 
-/** True only when the signed-in user has an admin_users membership row. */
+/** True only when the signed-in user has an admin_users membership row. Throws on network/backend errors so callers don't mislabel them as "not authorised". */
 export async function isStaff(userId: string): Promise<boolean> {
   const { data, error } = await backend().from("admin_users").select("user_id").eq("user_id", userId).limit(1);
-  if (error) return false;
+  if (error) {
+    if (error.code === "42501") return false;
+    throw error;
+  }
   return (data ?? []).length === 1;
 }
 

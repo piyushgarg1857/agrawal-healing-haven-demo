@@ -1,20 +1,29 @@
 # Dr. Agrawal’s Physiotherapy Centre
 
 ## Current delivery status
-Booking (secure RPCs + manual UPI verification) and staff admin (Supabase Auth + `admin_users` membership) are implemented against the PHYSIO Supabase project `ussqspqymblfruqsedzv`. No Lovable Cloud database is used. Staff dashboard actions still need a signed-in end-to-end check by the clinic.
+Canonical repository: `piyushgarg1857/agrawal-healing-haven-demo`, branch `feat/lovable-ui-backend-integration` (Lovable Git sync). Do not commit directly to `main`. Not deployed to production.
+
+All booking, payment-reference and admin paths use only the PHYSIO Supabase project `ussqspqymblfruqsedzv` with its publishable key. No service-role key, no Lovable Cloud database, no demo booking records.
+
+### Verified (automated or in browser, signed out)
+- Typecheck, full build and 11 unit tests pass (`bunx vitest run`).
+- Tests confirm: client targets `https://ussqspqymblfruqsedzv.supabase.co`; bookings are created only via `create_physio_booking` (no direct table insert/select); a missing token or a `false` result from `submit_physio_payment_reference` is an error, never success; staff-check network errors are shown, not mislabelled "not authorised"; status updates touching no rows report permission denied; error messages never echo patient input.
+- Live fees load from `service_prices`; signed-out reads of `bookings` are denied by RLS.
+- All pages render without errors and without horizontal overflow at 1280px and 390px; booking form validation messages appear.
+- One labelled real booking ("E2E Test - please cancel") reached the payment step and its reference was accepted as pending manual verification.
+
+### Not yet verified
+- Staff sign-in, bookings list, Mark verified / Cancel, and fee saving as a real `admin_users` member (no staff credentials are available to the build agent).
+- A signed-in non-staff account seeing "Permission denied".
+- Whether public sign-ups are disabled in Supabase Auth.
+
+### Payment truthfulness
+UPI payments to `8764336371@fam` are **never** confirmed automatically. A submitted reference only sets the booking to `pending_verification`; staff must check it in the clinic's UPI/bank app and mark it verified.
 
 ## Development / deployment
-Install with `bun install`; preview with `bun run dev`. Tests: `bunx vitest run`. The Lovable harness validates builds automatically. The project uses TanStack Start, React, TypeScript and Tailwind v4. Optional env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
+Install with `bun install`; preview with `bun run dev`. Tests: `bun run test`. Build: `bun run build`. The project uses TanStack Start, React, TypeScript and Tailwind v4. Optional env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (public values only).
 
 Publish only after the staff end-to-end checklist below passes.
-
-## Export to PHYSIO without overwriting main
-GitHub integration is not available for PHYSIO in this Lovable project; no source has been pushed there.
-1. On desktop, open Lovable's Code Editor and choose **Download codebase** (paid workspace feature).
-2. In your local PHYSIO checkout, create `feat/lovable-ui-backend-integration` from main before copying files.
-3. Copy the downloaded app source/configuration into that branch; review the diff, preserving required original infrastructure and excluding credentials/dependencies/build output.
-4. Install and run checks, push that branch, then open a pull request targeting main. Do not merge until the launch checklist passes.
-Alternatively configure Lovable Git sync in the editor's GitHub settings if supported for your repository; confirm the target branch before syncing. The GitHub API connector is not Git sync.
 
 ## Backend (PHYSIO Supabase project)
 
