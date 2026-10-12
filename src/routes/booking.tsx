@@ -1,32 +1,114 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Phone, Mail, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Phone, Mail, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
+import { friendlyError, getPrices, saveBooking, submitPaymentReference, UPI_ID, UPI_PAYEE, type Booking as Row } from "@/lib/physio-backend";
+
 export const Route = createFileRoute("/booking")({
   validateSearch: (s: Record<string, unknown>): { service?: string } => typeof s["service"] === "string" ? { service: s["service"] } : {},
   head: () => ({ meta: [
-    { title: "Arrange your visit | Dr. Agrawal’s Physiotherapy Centre" },
-    { name: "description", content: "Contact Dr. Agrawal’s Physiotherapy Centre to arrange your visit. Online booking is currently unavailable." },
-    { property: "og:title", content: "Arrange your visit | Dr. Agrawal’s" },
-    { property: "og:description", content: "Call or email our Surat clinic to confirm your appointment and current fees." },
+    { title: "Book a visit | Dr. Agrawal’s Physiotherapy Centre" },
+    { name: "description", content: "Request a visit at Dr. Agrawal’s Physiotherapy Centre in Surat and pay by UPI with manual verification by clinic staff." },
+    { property: "og:title", content: "Book a visit | Dr. Agrawal’s" },
+    { property: "og:description", content: "Choose a service, share your contact details and pay by UPI. Clinic staff verify each payment manually." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
   ] }), component: Booking,
 });
+
+type Step = "details" | "pay" | "done";
+
 function Booking() {
-  const { service: id } = Route.useSearch();
-  const service = services.find(s => s.id === id);
-  return <><SiteHeader /><PageIntro eyebrow="Your next step" title="Let’s plan your first visit." description="Contact the clinic to discuss your care and arrange a suitable appointment." />
+  const { service: initial } = Route.useSearch();
+  const [serviceId, setServiceId] = useState(services.some(s => s.id === initial) ? initial! : "consultation");
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [priceState, setPriceState] = useState<"loading" | "live" | "fallback">("loading");
+  const [step, setStep] = useState<Step>("details");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [bookingId, setBookingId] = useState<Row["id"] | null>(null);
+  const [reference, setReference] = useState("");
+  const heading = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    getPrices().then(rows => {
+      const map: Record<string, number> = {};
+      rows.forEach(r => { map[r.service] = Number(r.price); });
+      setPrices(map); setPriceState(rows.length ? "live" : "fallback");
+    }).catch(() => setPriceState("fallback"));
+  }, []);
+  useEffect(() => { heading.current?.focus(); }, [step]);
+
+  const service = services.find(s => s.id === serviceId) ?? services[0]!;
+  const amount = prices[serviceId] ?? service.price;
+
+  async function submitDetails(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setError(null);
+    const f = new FormData(e.currentTarget);
+    const name = String(f.get("name") ?? "").trim(), email = String(f.get("email") ?? "").trim(), phone = String(f.get("phone") ?? "").trim();
+    if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || !/^[+\d][\d\s-]{7,15}$/.test(phone)) { setError("Please enter your full name, a valid email and a valid phone number."); return; }
+    setBusy(true);
+    try {
+      const row = await saveBooking({ patient_name: name, patient_email: email, patient_phone: phone, service: serviceId, amount });
+      setBookingId(row.id); setStep("pay");
+    } catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
+  }
+
+  async function submitReference(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault(); setError(null);
+    const ref = reference.trim();
+    if (!/^[A-Za-z0-9]{6,40}$/.test(ref)) { setError("Enter the UPI transaction reference (letters and numbers, 6–40 characters)."); return; }
+    if (bookingId == null) return;
+    setBusy(true);
+    try { await submitPaymentReference(bookingId, ref); setStep("done"); }
+    catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
+  }
+
+  const upiLink = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_PAYEE)}&am=${amount}&cu=INR`;
+
+  return <><SiteHeader /><PageIntro eyebrow="Your next step" title="Let’s plan your first visit." description="Request a visit, pay by UPI, and the clinic will verify your payment and contact you to arrange a time." />
     <main id="main-content" tabIndex={-1} className="container booking-layout">
       <div className="booking-main booking-step">
-        <h2>Online booking is currently unavailable.</h2>
-        <p>No appointment has been created. Please contact the clinic directly to confirm scheduling, current fees and payment instructions.</p>
-        <div className="hero-actions">
-          <Button asChild size="lg"><a href="tel:+917046507918"><Phone /> Call the clinic</a></Button>
-          <Button asChild variant="outline"><a href="mailto:Dr.agrawalphysio@gmail.com"><Mail /> Email the clinic</a></Button>
-        </div>
-        <div className="payment-explanation"><h3><ShieldCheck /> Payment confirmation</h3><p>UPI payments require manual verification by clinic staff. Do not pay until the clinic confirms your request and instructions. No transaction reference can be submitted here yet.</p></div>
+        {step === "details" && <form onSubmit={submitDetails} noValidate>
+          <h2 ref={heading} tabIndex={-1}>Your details</h2>
+          <p>Appointment times are arranged with you by the clinic after your request. This form does not save a date or time.</p>
+          <div className="form-grid">
+            <label className="full-field"><span className="field-label">Service</span>
+              <select className="form-control" value={serviceId} onChange={e => setServiceId(e.target.value)}>
+                {services.map(s => <option key={s.id} value={s.id}>{s.name} — ₹{prices[s.id] ?? s.price}</option>)}
+              </select></label>
+            <label className="full-field"><span className="field-label">Full name</span><input className="form-control" name="name" autoComplete="name" required /></label>
+            <label><span className="field-label">Email</span><input className="form-control" name="email" type="email" autoComplete="email" required /></label>
+            <label><span className="field-label">Phone</span><input className="form-control" name="phone" type="tel" autoComplete="tel" required /></label>
+          </div>
+          {error && <p role="alert" className="form-error">{error}</p>}
+          <Button type="submit" size="lg" disabled={busy}>{busy && <Loader2 className="animate-spin" />} Continue to payment</Button>
+        </form>}
+
+        {step === "pay" && <form onSubmit={submitReference} noValidate>
+          <h2 ref={heading} tabIndex={-1}>Pay ₹{amount} by UPI</h2>
+          <p>Your request has been received with status “pending”. It is not confirmed until clinic staff verify your payment.</p>
+          <div className="payment-explanation"><h3><ShieldCheck /> How to pay</h3>
+            <ol><li>Pay <strong>₹{amount}</strong> to UPI ID <strong>{UPI_ID}</strong> ({UPI_PAYEE}).</li><li>Copy the transaction reference (UTR) from your UPI app.</li><li>Enter it below. Staff check it manually — this is not automatic.</li></ol>
+            <Button asChild variant="outline"><a href={upiLink}>Open UPI app</a></Button>
+          </div>
+          <label><span className="field-label">UPI transaction reference</span><input className="form-control" value={reference} onChange={e => setReference(e.target.value)} inputMode="text" autoComplete="off" required /></label>
+          {error && <p role="alert" className="form-error">{error}</p>}
+          <div className="hero-actions"><Button type="submit" size="lg" disabled={busy}>{busy && <Loader2 className="animate-spin" />} Submit reference</Button></div>
+        </form>}
+
+        {step === "done" && <div>
+          <h2 ref={heading} tabIndex={-1}>Reference submitted for manual verification</h2>
+          <p>Thank you. Your payment has <strong>not</strong> been confirmed yet. Clinic staff will check the reference and contact you to confirm your appointment time.</p>
+          <div className="hero-actions"><Button asChild variant="outline"><a href="tel:+917046507918"><Phone /> Call the clinic</a></Button></div>
+        </div>}
       </div>
-      <aside className="booking-summary"><span className="eyebrow">Your visit</span><h3>{service?.name ?? "Clinic contact"}</h3><p>+91-7046507918</p><p className="small-note">Near HDFC Bank, Delad Patiya, Sayan Oplad, Surat-394130 (Gujarat).</p><p className="small-note">Appointments are arranged with the clinic. This page does not save scheduling information.</p></aside>
+      <aside className="booking-summary"><span className="eyebrow">Your visit</span><h3>{service.name}</h3>
+        <p>₹{amount}</p>
+        <p className="small-note">{priceState === "loading" ? "Checking current fee…" : priceState === "live" ? "Current fee from the clinic system." : "Standard fee shown; the clinic will confirm the current fee."}</p>
+        <p className="small-note">Near HDFC Bank, Delad Patiya, Sayan Oplad, Surat-394130 (Gujarat).</p>
+        <p className="small-note"><a href="tel:+917046507918">+91-7046507918</a> · <a href="mailto:Dr.agrawalphysio@gmail.com"><Mail className="inline size-3" /> Email</a></p>
+      </aside>
     </main><SiteFooter /></>;
 }
