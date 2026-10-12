@@ -53,19 +53,13 @@ Alternatively configure Lovable Git sync in the editor's GitHub settings if supp
 - `/booking`: insert `pending` (payment_id null) → UPI instructions for `8764336371@fam` → reference saved to `payment_id`, status `pending_verification`. Nothing is auto-verified.
 - `/admin`: Supabase Auth `signInWithPassword` / `signOut`; lists bookings, marks `completed` or `cancelled`, upserts `service_prices`.
 
-### Required RLS (verify in the hosted dashboard before launch)
-```sql
--- service_prices: public read, staff write
-create policy "prices read" on service_prices for select to anon, authenticated using (true);
-create policy "prices write" on service_prices for all to authenticated using (true) with check (true);
--- bookings: public may only insert a fresh pending row
-create policy "booking insert" on bookings for insert to anon with check (status = 'pending' and payment_id is null);
--- reference submission (legacy behaviour): anon may move pending -> pending_verification only
-create policy "booking reference" on bookings for update to anon using (status = 'pending') with check (status = 'pending_verification');
--- staff full access
-create policy "staff bookings" on bookings for all to authenticated using (true) with check (true);
-```
-Notes: the booking insert returns the new `id`, which requires anon SELECT on that row; avoid a public SELECT policy — prefer a `security definer` RPC that inserts and returns the id. Restrict "authenticated" policies to an admin list/role if public sign-ups are enabled. The anon update policy can be abused by anyone who knows a booking id; replace it with an RPC that checks a secret token when possible.
+### Required database security (not applied automatically)
+Run the reviewed script `db/2026-10-12_secure_booking_rpcs.sql` on the existing project after a backup. It:
+- adds an `admin_users` staff allow-list and `is_staff()`; only listed staff can read/update bookings or edit fees;
+- removes all anonymous access to `bookings` (no public SELECT/UPDATE);
+- adds `create_booking` (returns only id + random token; amount taken server-side) and `submit_payment_reference` (needs the token, only pending -> pending_verification);
+- keeps `service_prices` publicly readable.
+Until it is applied, the booking page shows "Online booking is not yet enabled" and nothing is saved. Remove any legacy broad policies (check `pg_policies`) and disable public sign-ups in Auth settings.
 
 ### End-to-end checklist
 1. Submit a booking → row appears as "Awaiting payment" in admin.
