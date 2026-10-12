@@ -46,3 +46,30 @@ GitHub integration is not available for PHYSIO in this Lovable project; no sourc
 3. Copy the downloaded app source/configuration into that branch; review the diff, preserving required original infrastructure and excluding credentials/dependencies/build output.
 4. Install and run checks, push that branch, then open a pull request targeting main. Do not merge until the launch checklist passes.
 Alternatively configure Lovable Git sync in the editor's GitHub settings if supported for your repository; confirm the target branch before syncing. The GitHub API connector is not Git sync.
+
+## Live backend integration (implemented)
+
+- `src/lib/physio-backend.ts` talks to the existing project (`nohpalyybvjmbryimrrt`) with the public anon key from `PHYSIO/supabase-config.js` (override with `VITE_PHYSIO_SUPABASE_URL` / `VITE_PHYSIO_SUPABASE_ANON_KEY`). No service-role key is used.
+- `/booking`: insert `pending` (payment_id null) → UPI instructions for `8764336371@fam` → reference saved to `payment_id`, status `pending_verification`. Nothing is auto-verified.
+- `/admin`: Supabase Auth `signInWithPassword` / `signOut`; lists bookings, marks `completed` or `cancelled`, upserts `service_prices`.
+
+### Required RLS (verify in the hosted dashboard before launch)
+```sql
+-- service_prices: public read, staff write
+create policy "prices read" on service_prices for select to anon, authenticated using (true);
+create policy "prices write" on service_prices for all to authenticated using (true) with check (true);
+-- bookings: public may only insert a fresh pending row
+create policy "booking insert" on bookings for insert to anon with check (status = 'pending' and payment_id is null);
+-- reference submission (legacy behaviour): anon may move pending -> pending_verification only
+create policy "booking reference" on bookings for update to anon using (status = 'pending') with check (status = 'pending_verification');
+-- staff full access
+create policy "staff bookings" on bookings for all to authenticated using (true) with check (true);
+```
+Notes: the booking insert returns the new `id`, which requires anon SELECT on that row; avoid a public SELECT policy — prefer a `security definer` RPC that inserts and returns the id. Restrict "authenticated" policies to an admin list/role if public sign-ups are enabled. The anon update policy can be abused by anyone who knows a booking id; replace it with an RPC that checks a secret token when possible.
+
+### End-to-end checklist
+1. Submit a booking → row appears as "Awaiting payment" in admin.
+2. Submit a UPI reference → status "Needs verification".
+3. Admin checks the UPI app, marks verified → `completed`; or cancels → `cancelled`.
+4. Signed-out browser cannot list bookings (REST `select` on bookings returns `[]` or 401).
+5. Edit a fee in admin → booking page shows the new fee.
