@@ -70,7 +70,7 @@ export const faqs = [
   ],
   [
     "How do appointment payments work?",
-    "UPI payments require manual transaction verification. Submitting a transaction reference does not confirm payment or an appointment. Clinic staff review the reference before confirming. Online payment submission is currently unavailable; contact the clinic before paying.",
+    "UPI payments require manual transaction verification. Submitting a transaction reference does not confirm payment or an appointment. Clinic staff review the reference before confirming. Pay only to the UPI ID shown after your booking request is created.",
   ],
   [
     "How many sessions will I need?",

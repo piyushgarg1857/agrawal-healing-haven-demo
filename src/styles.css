@@ -2082,3 +2082,11 @@ td small {
     transform: none;
   }
 }
+
+.form-error { color: var(--destructive); font-size: 13px; margin: 12px 0; }
+.admin-login { max-width: 440px; }
+.admin-dashboard { display: grid; gap: 20px; }
+.admin-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--card); }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.admin-table th, .admin-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.admin-table th { font-size: 11px; color: var(--muted-foreground); font-weight: 600; }
