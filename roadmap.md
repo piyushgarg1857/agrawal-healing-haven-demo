@@ -7,3 +7,7 @@
 - [x] Refine first-screen clinic identity, keyboard navigation and narrow-screen layout.
 - [x] Preserve demo form details between steps and verify the refined journeys.
 - [x] Document the static-site port boundary and refined interactions.
+- [ ] Inspect private PHYSIO production source/configuration — blocked on source access or ZIP.
+- [ ] Integrate existing booking, pricing, Auth and authorized admin flows — blocked on source and existing backend connection.
+- [ ] Replace illustrative content with source-confirmed details and document production setup — blocked on source.
+- [ ] Verify production journeys and sync integration branch — blocked on implementation and target Git connection.
