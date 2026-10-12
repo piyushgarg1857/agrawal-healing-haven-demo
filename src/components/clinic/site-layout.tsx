@@ -100,6 +100,7 @@ export function SiteFooter() {
         <div>
           <h4>Your visit</h4>
           <Link to="/booking">Book an appointment</Link>
+          <Link to="/booking-status">Check booking status</Link>
           <a href="/#faq">Common questions</a>
           <a href="/#contact">Location & contact</a>
         </div>
@@ -109,9 +110,9 @@ export function SiteFooter() {
             Admin access <ArrowUpRight size={14} />
           </Link>
           <span className="footer-note">
-            Online booking is currently unavailable.
+            UPI payments are verified manually by clinic staff.
             <br />
-            Please call to arrange your visit.
+            The clinic contacts you to agree a visit time.
           </span>
         </div>
       </div>

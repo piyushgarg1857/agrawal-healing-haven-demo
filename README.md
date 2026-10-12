@@ -15,7 +15,15 @@ All booking, payment-reference and admin paths use only the PHYSIO Supabase proj
 ### Fixed: booking blocked when a staff session exists (2026-10-12)
 Root cause: patient booking calls shared the staff sign-in client. If anyone had signed in on /admin in that browser, the request carried the staff token (role `authenticated`), and that role is intentionally not allowed to run `create_physio_booking`, so the database answered 42501. Fix: patient calls (`create_physio_booking`, `submit_physio_payment_reference`, fee reads) now use a separate anonymous client that never stores a session. Database permissions were not changed. Validation messages from the database (e.g. invalid phone) are now shown as-is.
 
+### Appointment status (2026-10-12)
+- After booking, patients see "Request received — appointment not confirmed yet", a short booking reference, service, fee, UPI instructions and a private status code with a copy button.
+- After submitting a UPI reference: "Payment submitted for verification — appointment still pending clinic confirmation."
+- `/booking-status`: patients enter their private status code (the opaque `public_token`, never the booking ID). It shows status, service, fee, request date and whether a reference was sent — no name, email, phone or payment reference.
+- Staff labels: Awaiting payment reference (`pending`), Needs payment verification (`pending_verification`), Payment verified — appointment not confirmed (`completed`), Appointment confirmed (`completed` + `appointment_confirmed_at`), Cancelled. "Appointment agreed" is used only after staff agree a time with the patient by phone. No date/time is stored.
+- **Manual step required:** run `db/2026-10-12_booking_status_lookup.sql` once in Supabase → SQL Editor. It adds `bookings.appointment_confirmed_at` and the token-only `get_physio_booking_status` function (anon execute only; no new table grants or policies). Until then, the status page says online status checks are not enabled, and "Appointment agreed" shows that confirmation is not enabled. Verified: the function is currently absent (PGRST202) and the app shows that message.
+
 ### Not yet verified
+- Status lookup and "Appointment agreed" against the live database (need the SQL above applied).
 - Staff sign-in, bookings list, Mark verified / Cancel, and fee saving as a real `admin_users` member (no staff credentials are available to the build agent).
 - A signed-in non-staff account seeing "Permission denied".
 - Whether public sign-ups are disabled in Supabase Auth.
