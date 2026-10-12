@@ -13,7 +13,9 @@ export type BookingStatus = "pending" | "pending_verification" | "completed" | "
 export type Booking = {
   id: string | number; created_at: string; patient_name: string; patient_email: string;
   patient_phone: string; service: string; amount: number; payment_id: string | null; status: BookingStatus | string;
+  appointment_confirmed_at?: string | null;
 };
+export type PublicStatus = { status: string; service: string; amount: number; created_at: string; payment_submitted: boolean; appointment_confirmed: boolean };
 export type PriceRow = { service: string; price: number };
 
 let client: SupabaseClient | null = null;
