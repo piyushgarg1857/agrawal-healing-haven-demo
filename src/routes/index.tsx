@@ -27,8 +27,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Dr. Agrawal’s Physiotherapy Centre" },
       {
         property: "og:description",
-        content:
-          "Physiotherapy services and clinic contact information in Surat, Gujarat.",
+        content: "Physiotherapy services and clinic contact information in Surat, Gujarat.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -53,7 +52,11 @@ function Index() {
             <span className="eyebrow">Care that puts you first</span>
             <h1>
               Dr. Agrawal’s
-              <span>Physiotherapy<br />Centre.</span>
+              <span>
+                Physiotherapy
+                <br />
+                Centre.
+              </span>
             </h1>
             <p className="hero-description">
               Your movement. Your confidence. Our care. A thoughtful approach that starts with
@@ -210,8 +213,8 @@ function Index() {
                 you all belong in the conversation.
               </p>
               <p>
-                Our care approach brings together attentive assessment, a personalised
-                plan, and clear guidance for your next steps.
+                Our care approach brings together attentive assessment, a personalised plan, and
+                clear guidance for your next steps.
               </p>
               <div className="clinic-values">
                 <div>
@@ -292,7 +295,9 @@ function Index() {
                 <Phone />
                 <div>
                   <strong>Speak to the clinic</strong>
-                  <p><a href="tel:+917046507918">+91-7046507918</a></p>
+                  <p>
+                    <a href="tel:+917046507918">+91-7046507918</a>
+                  </p>
                   <small>Call to arrange your visit.</small>
                 </div>
               </div>
@@ -300,7 +305,9 @@ function Index() {
                 <Mail />
                 <div>
                   <strong>Email the clinic</strong>
-                  <p><a href="mailto:Dr.agrawalphysio@gmail.com">Dr.agrawalphysio@gmail.com</a></p>
+                  <p>
+                    <a href="mailto:Dr.agrawalphysio@gmail.com">Dr.agrawalphysio@gmail.com</a>
+                  </p>
                   <small>Contact the clinic to confirm appointment times.</small>
                 </div>
               </div>

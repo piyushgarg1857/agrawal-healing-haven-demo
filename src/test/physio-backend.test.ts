@@ -7,14 +7,21 @@ let tableResult: { data: unknown; error: unknown } = { data: [], error: null };
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: (url: string, _k: string, opts: { auth?: { persistSession?: boolean } }) => {
-    calls.url = url; clients.push({ url, opts });
+    calls.url = url;
+    clients.push({ url, opts });
     const client: Record<string, unknown> = {};
     const q: Record<string, unknown> = {};
     for (const m of ["select", "eq", "limit", "order", "update"]) q[m] = () => q;
     q["then"] = (r: (v: unknown) => unknown) => Promise.resolve(tableResult).then(r);
     Object.assign(client, {
-      rpc: (name: string, args: unknown) => { calls.rpc.push([name, args]); return Promise.resolve(rpcResult); },
-      from: (t: string) => { calls.from.push(t); return q; },
+      rpc: (name: string, args: unknown) => {
+        calls.rpc.push([name, args]);
+        return Promise.resolve(rpcResult);
+      },
+      from: (t: string) => {
+        calls.from.push(t);
+        return q;
+      },
     });
     return client;
   },
@@ -22,9 +29,19 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import * as be from "@/lib/physio-backend";
 import { describeStatus, shortReference } from "@/lib/booking-status";
-import { parseSavedBooking, validateFee, validatePatient, validateReference } from "@/lib/booking-validation";
+import {
+  parseSavedBooking,
+  validateFee,
+  validatePatient,
+  validateReference,
+} from "@/lib/booking-validation";
 
-beforeEach(() => { calls.rpc = []; calls.from = []; rpcResult = { data: null, error: null }; tableResult = { data: [], error: null }; });
+beforeEach(() => {
+  calls.rpc = [];
+  calls.from = [];
+  rpcResult = { data: null, error: null };
+  tableResult = { data: [], error: null };
+});
 
 describe("PHYSIO backend", () => {
   it("targets the PHYSIO Supabase project", () => {
@@ -34,19 +51,35 @@ describe("PHYSIO backend", () => {
 
   it("creates bookings only through the create_physio_booking RPC", async () => {
     rpcResult = { data: [{ booking_id: "b1", booking_token: "t1" }], error: null };
-    await expect(be.saveBooking({ patient_name: "A B", patient_email: "a@b.co", patient_phone: "9999999999", service: "sports" })).resolves.toEqual({ id: "b1", token: "t1" });
+    await expect(
+      be.saveBooking({
+        patient_name: "A B",
+        patient_email: "a@b.co",
+        patient_phone: "9999999999",
+        service: "sports",
+      }),
+    ).resolves.toEqual({ id: "b1", token: "t1" });
     expect(calls.rpc[0]?.[0]).toBe("create_physio_booking");
     expect(calls.from).not.toContain("bookings");
   });
 
   it("rejects a missing booking token instead of faking success", async () => {
     rpcResult = { data: [{ booking_id: "b1" }], error: null };
-    await expect(be.saveBooking({ patient_name: "A B", patient_email: "a@b.co", patient_phone: "9999999999", service: "sports" })).rejects.toThrow();
+    await expect(
+      be.saveBooking({
+        patient_name: "A B",
+        patient_email: "a@b.co",
+        patient_phone: "9999999999",
+        service: "sports",
+      }),
+    ).rejects.toThrow();
   });
 
   it("treats a false payment-reference result as denied", async () => {
     rpcResult = { data: false, error: null };
-    await expect(be.submitPaymentReference("b1", "bad", "ABC123456")).rejects.toMatchObject({ code: "42501" });
+    await expect(be.submitPaymentReference("b1", "bad", "ABC123456")).rejects.toMatchObject({
+      code: "42501",
+    });
     expect(calls.rpc[0]?.[0]).toBe("submit_physio_payment_reference");
   });
 
@@ -59,7 +92,9 @@ describe("PHYSIO backend", () => {
 
   it("reports a status update that touched no rows as denied", async () => {
     tableResult = { data: [], error: null };
-    await expect(be.updateBookingStatus("b1", "completed")).rejects.toMatchObject({ code: "42501" });
+    await expect(be.updateBookingStatus("b1", "completed")).rejects.toMatchObject({
+      code: "42501",
+    });
   });
 
   it("maps errors to messages without echoing input", () => {
@@ -73,15 +108,32 @@ describe("regression: booking while a staff session exists", () => {
   it("sends booking RPCs through a session-less anon client, not the staff client", async () => {
     be.backend(); // staff client (persists session)
     rpcResult = { data: [{ booking_id: "b1", booking_token: "t1" }], error: null };
-    await be.saveBooking({ patient_name: "A B", patient_email: "a@b.co", patient_phone: "9999999999", service: "consultation" });
+    await be.saveBooking({
+      patient_name: "A B",
+      patient_email: "a@b.co",
+      patient_phone: "9999999999",
+      service: "consultation",
+    });
     expect(be.publicBackend()).not.toBe(be.backend());
-    const pub = clients.find(c => c.opts?.auth?.persistSession === false);
+    const pub = clients.find((c) => c.opts?.auth?.persistSession === false);
     expect(pub?.url).toBe("https://ussqspqymblfruqsedzv.supabase.co");
-    expect(calls.rpc[0]).toEqual(["create_physio_booking", { p_patient_name: "A B", p_patient_email: "a@b.co", p_patient_phone: "9999999999", p_service: "consultation" }]);
+    expect(calls.rpc[0]).toEqual([
+      "create_physio_booking",
+      {
+        p_patient_name: "A B",
+        p_patient_email: "a@b.co",
+        p_patient_phone: "9999999999",
+        p_service: "consultation",
+      },
+    ]);
   });
   it("shows the clinic system's validation message instead of a permission error", () => {
-    expect(be.friendlyError({ code: "P0001", message: "Please enter a valid phone number" })).toBe("Please enter a valid phone number.");
-    expect(be.friendlyError({ code: "P0001", message: "anything else a@b.co" })).not.toContain("a@b.co");
+    expect(be.friendlyError({ code: "P0001", message: "Please enter a valid phone number" })).toBe(
+      "Please enter a valid phone number.",
+    );
+    expect(be.friendlyError({ code: "P0001", message: "anything else a@b.co" })).not.toContain(
+      "a@b.co",
+    );
   });
 });
 
@@ -102,15 +154,32 @@ describe("validation", () => {
   it("ignores malformed saved bookings", () => {
     expect(parseSavedBooking("{bad")).toBeNull();
     expect(parseSavedBooking(JSON.stringify({ id: "1", token: "t" }))).toBeNull();
-    expect(parseSavedBooking(JSON.stringify({ id: "1", token: "t", serviceId: "sports", amount: 900 }))).not.toBeNull();
+    expect(
+      parseSavedBooking(JSON.stringify({ id: "1", token: "t", serviceId: "sports", amount: 900 })),
+    ).not.toBeNull();
   });
 });
 
 describe("booking status", () => {
   it("looks up status by opaque token through the anon RPC only", async () => {
-    rpcResult = { data: [{ status: "pending", service: "consultation", amount: "500", created_at: "2026-10-12T00:00:00Z", payment_submitted: false, appointment_confirmed: false }], error: null };
+    rpcResult = {
+      data: [
+        {
+          status: "pending",
+          service: "consultation",
+          amount: "500",
+          created_at: "2026-10-12T00:00:00Z",
+          payment_submitted: false,
+          appointment_confirmed: false,
+        },
+      ],
+      error: null,
+    };
     const r = await be.getBookingStatus("a".repeat(32));
-    expect(calls.rpc[0]).toEqual(["get_physio_booking_status", { p_booking_token: "a".repeat(32) }]);
+    expect(calls.rpc[0]).toEqual([
+      "get_physio_booking_status",
+      { p_booking_token: "a".repeat(32) },
+    ]);
     expect(calls.from).not.toContain("bookings");
     expect(r?.amount).toBe(500);
     expect(Object.keys(r ?? {})).not.toEqual(expect.arrayContaining(["patient_name"]));
@@ -132,14 +201,21 @@ describe("booking status", () => {
   });
   it("never calls a booking confirmed unless staff recorded it", () => {
     expect(describeStatus("pending").message).toMatch(/not confirmed yet/);
-    expect(describeStatus("pending_verification").message).toBe("Payment submitted for verification — appointment still pending clinic confirmation.");
+    expect(describeStatus("pending_verification").message).toBe(
+      "Payment submitted for verification — appointment still pending clinic confirmation.",
+    );
     expect(describeStatus("completed").label).not.toMatch(/Appointment confirmed/);
     expect(describeStatus("completed", true).label).toBe("Appointment confirmed");
     expect(describeStatus("pending", true).label).not.toMatch(/confirmed/i);
     expect(describeStatus("cancelled", true).label).toBe("Cancelled");
   });
   it("explains a missing lookup function instead of failing silently", () => {
-    expect(be.friendlyError({ code: "PGRST202", message: "Could not find the function public.get_physio_booking_status" })).toMatch(/not yet enabled/);
+    expect(
+      be.friendlyError({
+        code: "PGRST202",
+        message: "Could not find the function public.get_physio_booking_status",
+      }),
+    ).toMatch(/not yet enabled/);
     expect(shortReference("1a2b3c4d-0000")).toBe("1A2B3C4D");
   });
 });

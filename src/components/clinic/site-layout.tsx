@@ -21,13 +21,18 @@ export function SiteHeader() {
   const menuButton = useRef<HTMLButtonElement>(null);
   return (
     <>
-      <a className="skip-link" href="#main-content">Skip to main content</a>
-      <header className="site-header" onKeyDown={(event) => {
-        if (event.key === "Escape" && open) {
-          setOpen(false);
-          menuButton.current?.focus();
-        }
-      }}>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+      <header
+        className="site-header"
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && open) {
+            setOpen(false);
+            menuButton.current?.focus();
+          }
+        }}
+      >
         <div className="header-inner">
           <Brand />
           <nav className="desktop-nav" aria-label="Main navigation">
