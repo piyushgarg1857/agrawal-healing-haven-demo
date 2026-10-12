@@ -12,13 +12,13 @@ export const Route = createFileRoute("/services/$serviceId")({
         { title: `${name} | Dr. Agrawal’s Physiotherapy Centre` },
         {
           name: "description",
-          content: `Explore the ${name.toLowerCase()} care concept and a personalised assessment at Dr. Agrawal’s Physiotherapy Centre.`,
+          content: `Explore the ${name.toLowerCase()} service and a personalised assessment at Dr. Agrawal’s Physiotherapy Centre.`,
         },
         { property: "og:title", content: `${name} | Dr. Agrawal’s` },
         {
           property: "og:description",
           content:
-            "Individual care, attentive assessment and guided movement. Design reference only.",
+            "Individual care, attentive assessment and guided movement. Contact our Surat clinic to arrange your visit.",
         },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
@@ -37,7 +37,7 @@ function ServicePage() {
         <PageIntro
           eyebrow="Our services"
           title="Service not found"
-          description="Please explore our available care concepts."
+          description="Please explore our available services."
         />
         <main id="main-content" tabIndex={-1} className="container section">
           <Button asChild>
@@ -54,12 +54,8 @@ function ServicePage() {
       <main id="main-content" tabIndex={-1} className="container service-detail">
         <div>
           <div className="service-price-note">
-            Illustrative session: ₹{service.price.toLocaleString("en-IN")} · {service.duration}{" "}
-            minutes
-            <br />
-            <span className="small-note">
-              Demo pricing only. Final services and fees require clinic approval.
-            </span>
+            Original listed fee: ₹{service.price.toLocaleString("en-IN")}
+            <br /><span className="small-note">Current pricing must be confirmed with the clinic; live prices are not connected yet.</span>
           </div>
           <h2>
             Start with understanding.

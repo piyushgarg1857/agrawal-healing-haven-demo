@@ -9,9 +9,8 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-## Design reference architecture
-- Keep all clinic bookings and admin records in transient React state; this project is a non-connected design reference and must not send patient or payment data.
-- Use shared clinic navigation and semantic tokens in the global stylesheet to keep all concept views visually consistent.
-- Keep sample services and fictional admin records in a browser-safe data module so display screens share one illustrative source.
-- Use leaf-route metadata for every content page and derive the favicon from the active clinic logo.
-- Treat this app as a presentation reference for a later static-site port; keep demo interactions isolated so no existing booking/admin handlers or integration contracts are replaced.
+## Clinic architecture
+- Preserve shared navigation and existing semantic tokens so production content retains the approved visual design.
+- Keep source-confirmed service definitions in a browser-safe module; never seed patient records or fabricate scheduling columns.
+- Leaf routes own metadata and the favicon derives from the existing clinic logo.
+- Until the original backend is linked through the editor, booking/admin fail closed with unavailable states; never replace missing integration with mock success or a new database.

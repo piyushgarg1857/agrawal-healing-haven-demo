@@ -7,10 +7,9 @@ import {
   Leaf,
   ClipboardList,
   Plus,
-  Quote,
+  Mail,
   MapPin,
   Phone,
-  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter } from "@/components/clinic/site-layout";
@@ -23,13 +22,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "A premium design concept for Dr. Agrawal’s Physiotherapy Centre. Explore physiotherapy care and a demo appointment journey.",
+          "Physiotherapy services at Dr. Agrawal’s Physiotherapy Centre in Surat. Contact the clinic to arrange your visit.",
       },
       { property: "og:title", content: "Dr. Agrawal’s Physiotherapy Centre" },
       {
         property: "og:description",
         content:
-          "Thoughtful care. A step towards better movement. A clinic website design concept.",
+          "Physiotherapy services and clinic contact information in Surat, Gujarat.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -211,7 +210,7 @@ function Index() {
                 you all belong in the conversation.
               </p>
               <p>
-                Our proposed care experience brings together attentive assessment, a personalised
+                Our care approach brings together attentive assessment, a personalised
                 plan, and clear guidance for your next steps.
               </p>
               <div className="clinic-values">
@@ -231,38 +230,8 @@ function Index() {
                 </Link>
               </Button>
               <p className="small-note">
-                Clinic and therapist details will be added after verification.
+                Contact the clinic to discuss your needs and arrange a visit.
               </p>
-            </div>
-          </div>
-        </section>
-        <section className="section testimonials">
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <span className="eyebrow">The patient perspective</span>
-                <h2>Care that feels personal.</h2>
-              </div>
-              <span className="demo-label">Illustrative testimonials · demo content</span>
-            </div>
-            <div className="quote-grid">
-              {[
-                "“Having time to explain my concerns would make the first visit feel much more comfortable.”",
-                "“A clear plan and guidance for home would help me understand what comes next.”",
-                "“Being listened to and involved in decisions is what matters most to me.”",
-              ].map((q, i) => (
-                <div className="quote" key={q}>
-                  <Quote />
-                  <blockquote>{q}</blockquote>
-                  <div className="quote-person">
-                    <span className="avatar">0{i + 1}</span>
-                    <div>
-                      <strong>Illustrative patient voice</strong>
-                      <small>Demo content · not a real review</small>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -316,23 +285,23 @@ function Index() {
                 <div>
                   <strong>Visit the centre</strong>
                   <p>Dr. Agrawal’s Physiotherapy Centre</p>
-                  <small>Verified address and map to be provided by the clinic.</small>
+                  <small>Near HDFC Bank, Delad Patiya, Sayan Oplad, Surat-394130 (Gujarat).</small>
                 </div>
               </div>
               <div>
                 <Phone />
                 <div>
                   <strong>Speak to the clinic</strong>
-                  <p>Contact details awaiting confirmation</p>
-                  <small>No placeholder phone number is used.</small>
+                  <p><a href="tel:+917046507918">+91-7046507918</a></p>
+                  <small>Call to arrange your visit.</small>
                 </div>
               </div>
               <div>
-                <Clock />
+                <Mail />
                 <div>
-                  <strong>Plan your visit</strong>
-                  <p>Clinic hours to be confirmed</p>
-                  <small>Appointment times shown in the booking preview are illustrative.</small>
+                  <strong>Email the clinic</strong>
+                  <p><a href="mailto:Dr.agrawalphysio@gmail.com">Dr.agrawalphysio@gmail.com</a></p>
+                  <small>Contact the clinic to confirm appointment times.</small>
                 </div>
               </div>
             </div>
