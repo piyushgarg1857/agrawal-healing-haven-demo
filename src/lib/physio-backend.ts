@@ -1,11 +1,10 @@
-// Client for the EXISTING PHYSIO backend (public anon key from PHYSIO/supabase-config.js).
+// Client for the PHYSIO Supabase project.
 // RLS on the hosted project is the security boundary. Never log patient fields.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-export const SUPABASE_URL = import.meta.env["VITE_PHYSIO_SUPABASE_URL"] ?? "https://nohpalyybvjmbryimrrt.supabase.co";
-const ANON_KEY =
-  import.meta.env["VITE_PHYSIO_SUPABASE_ANON_KEY"] ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vaHBhbHl5YnZqbWJyeWltcnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxODU4ODEsImV4cCI6MjA4MDc2MTg4MX0.zoaaY1qLQ6brdHx-hK5B9alDa721Hpk3yYPLqtCxOBQ";
+// New PHYSIO project (ref ussqspqymblfruqsedzv). Publishable key is public frontend config; never use a service-role key here.
+export const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] ?? "https://ussqspqymblfruqsedzv.supabase.co";
+const ANON_KEY = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "sb_publishable_mcrP-q4ayHg0iVlbH_R9_Q_5T0whtF3";
 
 export const UPI_ID = "8764336371@fam";
 export const UPI_PAYEE = "Dr. Agrawal's Physiotherapy Centre";
@@ -40,27 +39,27 @@ export async function getPrices(): Promise<PriceRow[]> {
   return (data ?? []) as PriceRow[];
 }
 
-// Requires supabase/migrations/20261012_secure_booking_rpcs.sql on the existing project.
 export async function saveBooking(input: { patient_name: string; patient_email: string; patient_phone: string; service: string }) {
-  const { data, error } = await backend().rpc("create_booking", {
-    p_name: input.patient_name, p_email: input.patient_email, p_phone: input.patient_phone, p_service: input.service,
+  const { data, error } = await backend().rpc("create_physio_booking", {
+    p_patient_name: input.patient_name, p_patient_email: input.patient_email, p_patient_phone: input.patient_phone, p_service: input.service,
   });
   if (error) throw error;
-  const row = (Array.isArray(data) ? data[0] : data) as { booking_id: string; token: string } | undefined;
-  if (!row) throw new Error("no booking returned");
-  return { id: row.booking_id, token: row.token };
+  const row = (Array.isArray(data) ? data[0] : data) as { booking_id: string; booking_token: string } | undefined;
+  if (!row?.booking_id || !row.booking_token) throw new Error("no booking returned");
+  return { id: String(row.booking_id), token: String(row.booking_token) };
 }
 
 export async function submitPaymentReference(id: string, token: string, reference: string) {
-  const { data, error } = await backend().rpc("submit_payment_reference", { p_booking_id: id, p_token: token, p_reference: reference });
+  const { data, error } = await backend().rpc("submit_physio_payment_reference", { p_booking_id: id, p_booking_token: token, p_payment_reference: reference });
   if (error) throw error;
-  if (data !== true) throw Object.assign(new Error("permission"), { code: "42501" });
+  if (data === false) throw Object.assign(new Error("permission"), { code: "42501" });
 }
 
-export async function isStaff(): Promise<boolean> {
-  const { data, error } = await backend().rpc("is_staff");
-  if (error) throw error;
-  return data === true;
+/** True only when the signed-in user has an admin_users membership row. */
+export async function isStaff(userId: string): Promise<boolean> {
+  const { data, error } = await backend().from("admin_users").select("user_id").eq("user_id", userId).limit(1);
+  if (error) return false;
+  return (data ?? []).length === 1;
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
@@ -76,6 +75,9 @@ export async function updateBookingStatus(id: Booking["id"], status: BookingStat
 }
 
 export async function savePrices(rows: PriceRow[]) {
-  const { error } = await backend().from("service_prices").upsert(rows, { onConflict: "service" });
-  if (error) throw error;
+  for (const r of rows) {
+    const { data, error } = await backend().from("service_prices").update({ price: r.price }).eq("service", r.service).select("service");
+    if (error) throw error;
+    if (!data || data.length === 0) throw Object.assign(new Error("permission"), { code: "42501" });
+  }
 }

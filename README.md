@@ -6,7 +6,7 @@ The existing premium Lovable styling, logo, typography, responsive rules and red
 **Production backend integration is NOT implemented.** Online booking and admin pages display truthful unavailable states; they do not collect patient information, accept payments, or expose records. No new database was provisioned and no existing database was modified.
 
 ## Required connection action
-In Lovable, open Cloud → **Already have a Supabase project? Connect it here** and link the existing `nohpalyybvjmbryimrrt` project (https://nohpalyybvjmbryimrrt.supabase.co). Do not enable a new Cloud database. This environment's backend tooling cannot attach the existing project from chat. No private or service-role key is required in frontend code.
+The app uses the PHYSIO Supabase project `ussqspqymblfruqsedzv` (see "Backend" below). Do not enable a separate Cloud database. No service-role key is used in frontend code.
 
 ## Confirmed integration contracts (pending implementation)
 - Auth: `signInWithPassword({ email, password })`, `getSession()`, `signOut()`.
@@ -47,23 +47,21 @@ GitHub integration is not available for PHYSIO in this Lovable project; no sourc
 4. Install and run checks, push that branch, then open a pull request targeting main. Do not merge until the launch checklist passes.
 Alternatively configure Lovable Git sync in the editor's GitHub settings if supported for your repository; confirm the target branch before syncing. The GitHub API connector is not Git sync.
 
-## Live backend integration (implemented)
+## Backend (PHYSIO Supabase project)
 
-- `src/lib/physio-backend.ts` talks to the existing project (`nohpalyybvjmbryimrrt`) with the public anon key from `PHYSIO/supabase-config.js` (override with `VITE_PHYSIO_SUPABASE_URL` / `VITE_PHYSIO_SUPABASE_ANON_KEY`). No service-role key is used.
-- `/booking`: insert `pending` (payment_id null) → UPI instructions for `8764336371@fam` → reference saved to `payment_id`, status `pending_verification`. Nothing is auto-verified.
-- `/admin`: Supabase Auth `signInWithPassword` / `signOut`; lists bookings, marks `completed` or `cancelled`, upserts `service_prices`.
+- Project ref `ussqspqymblfruqsedzv` (ap-south-1), URL `https://ussqspqymblfruqsedzv.supabase.co`. The old `nohpalyybvjmbryimrrt` project is no longer used.
+- Env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (public; defaults are built in). Never add a service-role key to the frontend.
+- Booking: `rpc('create_physio_booking')` returns booking id + opaque token (kept in sessionStorage only until the reference is sent) → UPI `8764336371@fam` → `rpc('submit_physio_payment_reference')` → status pending manual verification. Anonymous users cannot read bookings.
+- Admin: Supabase Auth email/password. Dashboard loads only if the user has a row in `admin_users`; otherwise "Permission denied". Fees are updated row-by-row on `service_prices`.
 
-### Required database security (not applied automatically)
-Run the reviewed script `db/2026-10-12_secure_booking_rpcs.sql` on the existing project after a backup. It:
-- adds an `admin_users` staff allow-list and `is_staff()`; only listed staff can read/update bookings or edit fees;
-- removes all anonymous access to `bookings` (no public SELECT/UPDATE);
-- adds `create_booking` (returns only id + random token; amount taken server-side) and `submit_payment_reference` (needs the token, only pending -> pending_verification);
-- keeps `service_prices` publicly readable.
-Until it is applied, the booking page shows "Online booking is not yet enabled" and nothing is saved. Remove any legacy broad policies (check `pg_policies`) and disable public sign-ups in Auth settings.
+### Admin bootstrap (manual, once)
+1. In Supabase → Authentication → Users, create the clinic staff user (disable public sign-ups).
+2. In the SQL editor: `insert into public.admin_users(user_id) select id from auth.users where email = '<staff email>';`
 
 ### End-to-end checklist
-1. Submit a booking → row appears as "Awaiting payment" in admin.
-2. Submit a UPI reference → status "Needs verification".
-3. Admin checks the UPI app, marks verified → `completed`; or cancels → `cancelled`.
-4. Signed-out browser cannot list bookings (REST `select` on bookings returns `[]` or 401).
-5. Edit a fee in admin → booking page shows the new fee.
+1. Book a service → payment step shows the live fee and UPI ID.
+2. Submit a UPI reference → "pending manual verification".
+3. Staff signs in → booking listed as "Needs verification" → check UPI app → Mark verified (`completed`) or Cancel (`cancelled`).
+4. Non-staff account → "Permission denied", no records.
+5. Signed out: `GET /rest/v1/bookings` returns permission denied.
+6. Edit a fee in admin → booking page shows the new fee.
