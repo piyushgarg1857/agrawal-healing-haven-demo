@@ -1,20 +1,42 @@
 # Dr. Agrawal’s Physiotherapy Centre
 
 ## Current delivery status
-Booking (secure RPCs + manual UPI verification) and staff admin (Supabase Auth + `admin_users` membership) are implemented against the PHYSIO Supabase project `ussqspqymblfruqsedzv`. No Lovable Cloud database is used. Staff dashboard actions still need a signed-in end-to-end check by the clinic.
+Canonical repository: `piyushgarg1857/agrawal-healing-haven-demo`, branch `feat/lovable-ui-backend-integration` (Lovable Git sync). Do not commit directly to `main`. Not deployed to production.
+
+All booking, payment-reference and admin paths use only the PHYSIO Supabase project `ussqspqymblfruqsedzv` with its publishable key. No service-role key, no Lovable Cloud database, no demo booking records.
+
+### Verified (automated or in browser, signed out)
+- Typecheck, full build and 11 unit tests pass (`bunx vitest run`).
+- Tests confirm: client targets `https://ussqspqymblfruqsedzv.supabase.co`; bookings are created only via `create_physio_booking` (no direct table insert/select); a missing token or a `false` result from `submit_physio_payment_reference` is an error, never success; staff-check network errors are shown, not mislabelled "not authorised"; status updates touching no rows report permission denied; error messages never echo patient input.
+- Live fees load from `service_prices`; signed-out reads of `bookings` are denied by RLS.
+- All pages render without errors and without horizontal overflow at 1280px and 390px; booking form validation messages appear.
+- One labelled real booking ("E2E Test - please cancel") reached the payment step and its reference was accepted as pending manual verification.
+
+### Fixed: booking blocked when a staff session exists (2026-10-12)
+Root cause: patient booking calls shared the staff sign-in client. If anyone had signed in on /admin in that browser, the request carried the staff token (role `authenticated`), and that role is intentionally not allowed to run `create_physio_booking`, so the database answered 42501. Fix: patient calls (`create_physio_booking`, `submit_physio_payment_reference`, fee reads) now use a separate anonymous client that never stores a session. Database permissions were not changed. Validation messages from the database (e.g. invalid phone) are now shown as-is.
+
+### Appointment status (2026-10-12)
+- After booking, patients see "Request received — appointment not confirmed yet", a short booking reference, service, fee, UPI instructions and a private status code with a copy button.
+- After submitting a UPI reference: "Payment submitted for verification — appointment still pending clinic confirmation."
+- `/booking-status`: patients enter their private status code (the opaque `public_token`, never the booking ID). It shows status, service, fee, request date and whether a reference was sent — no name, email, phone or payment reference.
+- Staff labels: Awaiting payment reference (`pending`), Needs payment verification (`pending_verification`), Payment verified — appointment not confirmed (`completed`), Appointment confirmed (`completed` + `appointment_confirmed_at`), Cancelled. "Appointment agreed" is used only after staff agree a time with the patient by phone. No date/time is stored.
+- **Applied (2026-10-12):** `db/2026-10-12_booking_status_lookup.sql` is live on `ussqspqymblfruqsedzv`: `bookings.appointment_confirmed_at` and the token-only `get_physio_booking_status(text)` (execute: anon only; revoked from PUBLIC and authenticated). The file is idempotent and kept for review. Verified live: a dummy code returns an empty result with no error and no patient details.
+- Security advisor: the anon-executable SECURITY DEFINER functions (`create_physio_booking`, `submit_physio_payment_reference`, `get_physio_booking_status`) are intentional; each is token- or input-bound and returns no name/email/phone/payment reference. The site also rejects malformed status codes before calling the database and throttles lookups to one per 3 seconds per browser tab. Server-side rate limiting is not available in the database itself; use Supabase's API rate limits/WAF if abuse appears.
+- Staff confirmation: "Appointment agreed" updates `appointment_confirmed_at` only via the signed-in staff client under the existing `admin_users`-gated UPDATE policy, and only on `completed` bookings; non-staff updates affect zero rows and are shown as not permitted.
+
+### Not yet verified
+- Status lookup and "Appointment agreed" against the live database (need the SQL above applied).
+- Staff sign-in, bookings list, Mark verified / Cancel, and fee saving as a real `admin_users` member (no staff credentials are available to the build agent).
+- A signed-in non-staff account seeing "Permission denied".
+- Whether public sign-ups are disabled in Supabase Auth.
+
+### Payment truthfulness
+UPI payments to `8764336371@fam` are **never** confirmed automatically. A submitted reference only sets the booking to `pending_verification`; staff must check it in the clinic's UPI/bank app and mark it verified.
 
 ## Development / deployment
-Install with `bun install`; preview with `bun run dev`. Tests: `bunx vitest run`. The Lovable harness validates builds automatically. The project uses TanStack Start, React, TypeScript and Tailwind v4. Optional env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`.
+Install with `bun install`; preview with `bun run dev`. Tests: `bun run test`. Build: `bun run build`. The project uses TanStack Start, React, TypeScript and Tailwind v4. Optional env: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (public values only).
 
 Publish only after the staff end-to-end checklist below passes.
-
-## Export to PHYSIO without overwriting main
-GitHub integration is not available for PHYSIO in this Lovable project; no source has been pushed there.
-1. On desktop, open Lovable's Code Editor and choose **Download codebase** (paid workspace feature).
-2. In your local PHYSIO checkout, create `feat/lovable-ui-backend-integration` from main before copying files.
-3. Copy the downloaded app source/configuration into that branch; review the diff, preserving required original infrastructure and excluding credentials/dependencies/build output.
-4. Install and run checks, push that branch, then open a pull request targeting main. Do not merge until the launch checklist passes.
-Alternatively configure Lovable Git sync in the editor's GitHub settings if supported for your repository; confirm the target branch before syncing. The GitHub API connector is not Git sync.
 
 ## Backend (PHYSIO Supabase project)
 

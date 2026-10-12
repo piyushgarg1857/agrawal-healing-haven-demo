@@ -55,7 +55,10 @@ function ServicePage() {
         <div>
           <div className="service-price-note">
             Original listed fee: ₹{service.price.toLocaleString("en-IN")}
-            <br /><span className="small-note">Current pricing must be confirmed with the clinic; live prices are not connected yet.</span>
+            <br />
+            <span className="small-note">
+              Current pricing must be confirmed with the clinic; live prices are not connected yet.
+            </span>
           </div>
           <h2>
             Start with understanding.

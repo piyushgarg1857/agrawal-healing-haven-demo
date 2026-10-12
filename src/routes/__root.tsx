@@ -81,13 +81,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Dr. Agrawal’s Physiotherapy Centre" },
       {
         name: "description",
-        content: "Physiotherapy services in Surat, Gujarat. Contact Dr. Agrawal’s Physiotherapy Centre.",
+        content:
+          "Physiotherapy services in Surat, Gujarat. Contact Dr. Agrawal’s Physiotherapy Centre.",
       },
 
       { property: "og:title", content: "Dr. Agrawal’s Physiotherapy Centre" },
       {
         property: "og:description",
-        content: "Physiotherapy services in Surat, Gujarat. Contact Dr. Agrawal’s Physiotherapy Centre.",
+        content:
+          "Physiotherapy services in Surat, Gujarat. Contact Dr. Agrawal’s Physiotherapy Centre.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

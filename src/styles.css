@@ -2090,3 +2090,13 @@ td small {
 .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .admin-table th, .admin-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .admin-table th { font-size: 11px; color: var(--muted-foreground); font-weight: 600; }
+
+.booking-reference { margin-block: 1.25rem; }
+.status-pill { display: inline-block; padding: 0.3rem 0.75rem; border-radius: 999px; background: var(--secondary); color: var(--secondary-foreground); font-size: 0.9rem; }
+.status-pill[data-tone="done"] { background: var(--accent); color: var(--accent-foreground); }
+.status-pill[data-tone="stopped"] { background: var(--muted); color: var(--muted-foreground); }
+.reference-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem 1.25rem; margin: 1rem 0; }
+.reference-list .full-field { grid-column: 1 / -1; }
+.reference-list dt { font-size: 0.8rem; color: var(--muted-foreground); }
+.reference-list dd { margin: 0.15rem 0 0; font-weight: 600; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.status-code { font-size: 0.85rem; word-break: break-all; background: var(--muted); padding: 0.2rem 0.4rem; border-radius: 4px; }

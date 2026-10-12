@@ -21,13 +21,18 @@ export function SiteHeader() {
   const menuButton = useRef<HTMLButtonElement>(null);
   return (
     <>
-      <a className="skip-link" href="#main-content">Skip to main content</a>
-      <header className="site-header" onKeyDown={(event) => {
-        if (event.key === "Escape" && open) {
-          setOpen(false);
-          menuButton.current?.focus();
-        }
-      }}>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+      <header
+        className="site-header"
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && open) {
+            setOpen(false);
+            menuButton.current?.focus();
+          }
+        }}
+      >
         <div className="header-inner">
           <Brand />
           <nav className="desktop-nav" aria-label="Main navigation">
@@ -100,6 +105,7 @@ export function SiteFooter() {
         <div>
           <h4>Your visit</h4>
           <Link to="/booking">Book an appointment</Link>
+          <Link to="/booking-status">Check booking status</Link>
           <a href="/#faq">Common questions</a>
           <a href="/#contact">Location & contact</a>
         </div>
@@ -109,9 +115,9 @@ export function SiteFooter() {
             Admin access <ArrowUpRight size={14} />
           </Link>
           <span className="footer-note">
-            Online booking is currently unavailable.
+            UPI payments are verified manually by clinic staff.
             <br />
-            Please call to arrange your visit.
+            The clinic contacts you to agree a visit time.
           </span>
         </div>
       </div>
