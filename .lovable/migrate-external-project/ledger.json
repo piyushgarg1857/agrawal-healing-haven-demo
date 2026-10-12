@@ -1,0 +1,14 @@
+{
+  "source": "github",
+  "repository": "https://github.com/piyushgarg1857/PHYSIO",
+  "target_branch": "feat/lovable-ui-backend-integration",
+  "capabilities": [
+    {"capability":"source code inspection","source":"private PHYSIO repository","outcome":"preserve production contracts","status":"blocked","next_action":"Provide repository access or attach source ZIP; no accessible GitHub connection exists."},
+    {"capability":"database schema and records","source":"existing nohpalyybvjmbryimrrt project","outcome":"retain existing backend without provisioning or importing","status":"pending","next_action":"Connect the existing project in the editor and inspect schema/RLS; do not create a new database."},
+    {"capability":"admin authentication and authorization","source":"existing admin.js and Auth/RLS configuration","outcome":"preserve secure existing authorization","status":"blocked","next_action":"Inspect original authentication code and hosted authorization policies before implementation."},
+    {"capability":"booking and manual UPI verification","source":"booking.js and supabase-config.js","outcome":"recreate against original columns and status values","status":"blocked","next_action":"Inspect source configuration and mutation contracts; retrieve existing public key from source."},
+    {"capability":"clinic content and prices","source":"original site and service_prices","outcome":"replace illustrative content with confirmed values","status":"blocked","next_action":"Inspect source clinic contact details and existing service price mappings."},
+    {"capability":"GitHub sync and cutover","source":"PHYSIO main","outcome":"new integration branch only; preserve main","status":"blocked","next_action":"Project origin is not PHYSIO; user must configure Git integration and branch in the editor."},
+    {"capability":"production end-to-end verification","source":"existing live backend","outcome":"verify real booking readback, admin access and payment-reference workflow","status":"blocked","next_action":"Complete source/backend access and implementation first; demo checks do not count."}
+  ]
+}
