@@ -107,6 +107,8 @@ export async function savePrices(rows: PriceRow[]) {
 export const STATUS_TOKEN_PATTERN = /^[A-Za-z0-9-]{16,128}$/;
 const LOOKUP_MIN_INTERVAL_MS = 3000;
 let lastLookupAt = 0;
+/** Test helper: clears the per-tab lookup throttle. */
+export function resetStatusLookupThrottle() { lastLookupAt = 0; }
 
 export async function getBookingStatus(token: string): Promise<PublicStatus | null> {
   const clean = token.trim();

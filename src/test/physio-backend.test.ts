@@ -116,8 +116,19 @@ describe("booking status", () => {
     expect(Object.keys(r ?? {})).not.toEqual(expect.arrayContaining(["patient_name"]));
   });
   it("returns null for an unknown code", async () => {
+    be.resetStatusLookupThrottle();
     rpcResult = { data: [], error: null };
     await expect(be.getBookingStatus("b".repeat(32))).resolves.toBeNull();
+  });
+  it("rejects malformed codes and rapid repeat lookups without calling the database", async () => {
+    be.resetStatusLookupThrottle();
+    const before = calls.rpc.length;
+    await expect(be.getBookingStatus("short")).rejects.toThrow(/full private status code/);
+    await expect(be.getBookingStatus("x'; drop table--".padEnd(20, "a"))).rejects.toThrow();
+    expect(calls.rpc.length).toBe(before);
+    rpcResult = { data: [], error: null };
+    await be.getBookingStatus("c".repeat(32));
+    await expect(be.getBookingStatus("c".repeat(32))).rejects.toThrow(/wait a few seconds/);
   });
   it("never calls a booking confirmed unless staff recorded it", () => {
     expect(describeStatus("pending").message).toMatch(/not confirmed yet/);
