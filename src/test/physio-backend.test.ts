@@ -1,19 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const clients: { url: string; opts: { auth?: { persistSession?: boolean } } }[] = [];
 const calls: { url?: string; rpc: [string, unknown][]; from: string[] } = { rpc: [], from: [] };
 let rpcResult: { data: unknown; error: unknown } = { data: null, error: null };
 let tableResult: { data: unknown; error: unknown } = { data: [], error: null };
 
 vi.mock("@supabase/supabase-js", () => ({
-  createClient: (url: string) => {
-    calls.url = url;
+  createClient: (url: string, _k: string, opts: { auth?: { persistSession?: boolean } }) => {
+    calls.url = url; clients.push({ url, opts });
+    const client = {
     const q: Record<string, unknown> = {};
     for (const m of ["select", "eq", "limit", "order", "update"]) q[m] = () => q;
     q["then"] = (r: (v: unknown) => unknown) => Promise.resolve(tableResult).then(r);
-    return {
+    Object.assign(client, {
       rpc: (name: string, args: unknown) => { calls.rpc.push([name, args]); return Promise.resolve(rpcResult); },
       from: (t: string) => { calls.from.push(t); return q; },
-    };
+    });
+    return client;
   },
 }));
 
@@ -62,6 +65,22 @@ describe("PHYSIO backend", () => {
     expect(be.friendlyError({ message: "Failed to fetch" })).toMatch(/could not be reached/);
     expect(be.friendlyError({ code: "42501", message: "x" })).toMatch(/not permitted/);
     expect(be.friendlyError(new Error("patient a@b.co"))).not.toContain("a@b.co");
+  });
+});
+
+describe("regression: booking while a staff session exists", () => {
+  it("sends booking RPCs through a session-less anon client, not the staff client", async () => {
+    be.backend(); // staff client (persists session)
+    rpcResult = { data: [{ booking_id: "b1", booking_token: "t1" }], error: null };
+    await be.saveBooking({ patient_name: "A B", patient_email: "a@b.co", patient_phone: "9999999999", service: "consultation" });
+    expect(be.publicBackend()).not.toBe(be.backend());
+    const pub = clients.find(c => c.opts?.auth?.persistSession === false);
+    expect(pub?.url).toBe("https://ussqspqymblfruqsedzv.supabase.co");
+    expect(calls.rpc[0]).toEqual(["create_physio_booking", { p_patient_name: "A B", p_patient_email: "a@b.co", p_patient_phone: "9999999999", p_service: "consultation" }]);
+  });
+  it("shows the clinic system's validation message instead of a permission error", () => {
+    expect(be.friendlyError({ code: "P0001", message: "Please enter a valid phone number" })).toBe("Please enter a valid phone number.");
+    expect(be.friendlyError({ code: "P0001", message: "anything else a@b.co" })).not.toContain("a@b.co");
   });
 });
 
