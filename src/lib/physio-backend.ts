@@ -103,8 +103,22 @@ export async function savePrices(rows: PriceRow[]) {
 }
 
 /** Token-only lookup; returns no patient contact details. null = no booking for that code. */
+/** Token shape accepted before any network call (UUID-like opaque tokens, 16–128 chars). */
+export const STATUS_TOKEN_PATTERN = /^[A-Za-z0-9-]{16,128}$/;
+const LOOKUP_MIN_INTERVAL_MS = 3000;
+let lastLookupAt = 0;
+
 export async function getBookingStatus(token: string): Promise<PublicStatus | null> {
-  const { data, error } = await publicBackend().rpc("get_physio_booking_status", { p_booking_token: token });
+  const clean = token.trim();
+  if (!STATUS_TOKEN_PATTERN.test(clean)) {
+    throw Object.assign(new Error("Please paste the full private status code exactly as shown."), { code: "P0001" });
+  }
+  const now = Date.now();
+  if (now - lastLookupAt < LOOKUP_MIN_INTERVAL_MS) {
+    throw Object.assign(new Error("Please wait a few seconds before checking again."), { code: "P0001" });
+  }
+  lastLookupAt = now;
+  const { data, error } = await publicBackend().rpc("get_physio_booking_status", { p_booking_token: clean });
   if (error) throw error;
   const row = (Array.isArray(data) ? data[0] : data) as PublicStatus | undefined;
   return row ? { ...row, amount: Number(row.amount) } : null;

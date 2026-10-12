@@ -1,5 +1,7 @@
 -- Reviewed migration for the PHYSIO Supabase project (ussqspqymblfruqsedzv).
--- NOT applied automatically. The owner runs it once in Supabase → SQL Editor.
+-- STATUS: APPLIED to the live project by the owner on 2026-10-12 (execute revoked from
+-- PUBLIC and authenticated, granted to anon only). Kept for review/reproducibility;
+-- every statement is idempotent and safe to re-run.
 -- Purpose: let a patient check their own booking status with the opaque booking
 -- token (public_token) they received, and let staff record that an appointment
 -- has been agreed. No appointment date/time is stored or invented.
@@ -34,6 +36,7 @@ as $$
 $$;
 
 revoke all on function public.get_physio_booking_status(text) from public;
+revoke all on function public.get_physio_booking_status(text) from authenticated;
 grant execute on function public.get_physio_booking_status(text) to anon;
 -- Match the existing booking RPCs: authenticated has no execute; the frontend calls
 -- this through a session-less anon client.
