@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
 export const Route = createFileRoute("/booking")({
-  validateSearch: (s: Record<string, unknown>): { service?: string } => ({
-    service: typeof s["service"] === "string" ? s["service"] : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { service?: string } =>
+    typeof s["service"] === "string" ? { service: s["service"] } : {},
   head: () => ({
     meta: [
       { title: "Book an appointment | Dr. Agrawal’s Physiotherapy Centre" },
