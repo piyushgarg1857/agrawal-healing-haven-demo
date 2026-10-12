@@ -5,7 +5,7 @@ import { Loader2, LogOut, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
-import { backend, friendlyError, getAllBookings, getPrices, savePrices, updateBookingStatus, type Booking, type BookingStatus } from "@/lib/physio-backend";
+import { backend, friendlyError, getAllBookings, getPrices, isStaff, savePrices, updateBookingStatus, type Booking, type BookingStatus } from "@/lib/physio-backend";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [
@@ -62,6 +62,8 @@ function Dashboard({ email }: { email: string }) {
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<Booking["id"] | null>(null);
 
+  const [staff, setStaff] = useState<boolean | null>(null);
+  useEffect(() => { isStaff().then(setStaff).catch(() => setStaff(false)); }, []);
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -72,7 +74,7 @@ function Dashboard({ email }: { email: string }) {
       setPrices(map);
     } catch (err) { setRows([]); setError(friendlyError(err)); }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (staff) void load(); }, [load, staff]);
 
   async function setStatus(id: Booking["id"], status: BookingStatus) {
     setBusyId(id); setNotice(null); setError(null);
@@ -86,6 +88,9 @@ function Dashboard({ email }: { email: string }) {
     try { await savePrices(list); setNotice("Fees saved."); } catch (err) { setError(friendlyError(err)); }
   }
 
+  if (staff === null) return <p><Loader2 className="inline animate-spin" /> Checking access…</p>;
+  if (!staff) return <div className="booking-step"><h2>Not authorised</h2><p>This account is not on the clinic staff list. No patient records are shown.</p>
+    <Button variant="outline" onClick={() => void backend().auth.signOut()}><LogOut /> Sign out</Button></div>;
   return <div className="admin-dashboard">
     <div className="hero-actions"><span className="small-note">Signed in as {email}</span>
       <Button variant="outline" onClick={() => void load()}><RefreshCw /> Refresh</Button>

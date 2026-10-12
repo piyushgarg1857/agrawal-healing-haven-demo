@@ -4,7 +4,7 @@ import { Phone, Mail, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
-import { friendlyError, getPrices, saveBooking, submitPaymentReference, UPI_ID, UPI_PAYEE, type Booking as Row } from "@/lib/physio-backend";
+import { friendlyError, getPrices, saveBooking, submitPaymentReference, UPI_ID, UPI_PAYEE } from "@/lib/physio-backend";
 
 export const Route = createFileRoute("/booking")({
   validateSearch: (s: Record<string, unknown>): { service?: string } => typeof s["service"] === "string" ? { service: s["service"] } : {},
@@ -27,7 +27,7 @@ function Booking() {
   const [step, setStep] = useState<Step>("details");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bookingId, setBookingId] = useState<Row["id"] | null>(null);
+  const [booking, setBooking] = useState<{ id: string; token: string } | null>(null);
   const [reference, setReference] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -50,8 +50,8 @@ function Booking() {
     if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || !/^[+\d][\d\s-]{7,15}$/.test(phone)) { setError("Please enter your full name, a valid email and a valid phone number."); return; }
     setBusy(true);
     try {
-      const row = await saveBooking({ patient_name: name, patient_email: email, patient_phone: phone, service: serviceId, amount });
-      setBookingId(row.id); setStep("pay");
+      const row = await saveBooking({ patient_name: name, patient_email: email, patient_phone: phone, service: serviceId });
+      setBooking(row); setStep("pay");
     } catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
   }
 
@@ -59,9 +59,9 @@ function Booking() {
     e.preventDefault(); setError(null);
     const ref = reference.trim();
     if (!/^[A-Za-z0-9]{6,40}$/.test(ref)) { setError("Enter the UPI transaction reference (letters and numbers, 6–40 characters)."); return; }
-    if (bookingId == null) return;
+    if (!booking) return;
     setBusy(true);
-    try { await submitPaymentReference(bookingId, ref); setStep("done"); }
+    try { await submitPaymentReference(booking.id, booking.token, ref); setStep("done"); }
     catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
   }
 

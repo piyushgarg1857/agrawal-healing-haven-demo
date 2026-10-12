@@ -27,6 +27,7 @@ export function backend(): SupabaseClient {
 export function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : typeof e === "object" && e && "message" in e ? String((e as { message: unknown }).message) : "";
   const code = typeof e === "object" && e && "code" in e ? String((e as { code: unknown }).code) : "";
+  if (code === "PGRST202" || /Could not find the function/i.test(msg)) return "Online booking is not yet enabled on the clinic system. Please call the clinic.";
   if (/fetch|network|Failed to fetch|resolve/i.test(msg)) return "The clinic system could not be reached. Please call the clinic or try again later.";
   if (code === "42501" || /permission|row-level security|policy/i.test(msg)) return "This action is not permitted by the clinic system's security settings.";
   if (/Invalid login/i.test(msg)) return "Email or password is incorrect.";
@@ -39,17 +40,27 @@ export async function getPrices(): Promise<PriceRow[]> {
   return (data ?? []) as PriceRow[];
 }
 
-export async function saveBooking(input: { patient_name: string; patient_email: string; patient_phone: string; service: string; amount: number }) {
-  const { data, error } = await backend().from("bookings")
-    .insert([{ ...input, status: "pending", payment_id: null }]).select("id").single();
+// Requires supabase/migrations/20261012_secure_booking_rpcs.sql on the existing project.
+export async function saveBooking(input: { patient_name: string; patient_email: string; patient_phone: string; service: string }) {
+  const { data, error } = await backend().rpc("create_booking", {
+    p_name: input.patient_name, p_email: input.patient_email, p_phone: input.patient_phone, p_service: input.service,
+  });
   if (error) throw error;
-  return data as { id: Booking["id"] };
+  const row = (Array.isArray(data) ? data[0] : data) as { booking_id: string; token: string } | undefined;
+  if (!row) throw new Error("no booking returned");
+  return { id: row.booking_id, token: row.token };
 }
 
-export async function submitPaymentReference(id: Booking["id"], reference: string) {
-  const { error } = await backend().from("bookings")
-    .update({ payment_id: reference, status: "pending_verification" }).eq("id", id).eq("status", "pending");
+export async function submitPaymentReference(id: string, token: string, reference: string) {
+  const { data, error } = await backend().rpc("submit_payment_reference", { p_booking_id: id, p_token: token, p_reference: reference });
   if (error) throw error;
+  if (data !== true) throw Object.assign(new Error("permission"), { code: "42501" });
+}
+
+export async function isStaff(): Promise<boolean> {
+  const { data, error } = await backend().rpc("is_staff");
+  if (error) throw error;
+  return data === true;
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
