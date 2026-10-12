@@ -8,7 +8,7 @@ let tableResult: { data: unknown; error: unknown } = { data: [], error: null };
 vi.mock("@supabase/supabase-js", () => ({
   createClient: (url: string, _k: string, opts: { auth?: { persistSession?: boolean } }) => {
     calls.url = url; clients.push({ url, opts });
-    const client = {
+    const client: Record<string, unknown> = {};
     const q: Record<string, unknown> = {};
     for (const m of ["select", "eq", "limit", "order", "update"]) q[m] = () => q;
     q["then"] = (r: (v: unknown) => unknown) => Promise.resolve(tableResult).then(r);
