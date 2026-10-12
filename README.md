@@ -6,7 +6,7 @@ The existing premium Lovable styling, logo, typography, responsive rules and red
 **Production backend integration is NOT implemented.** Online booking and admin pages display truthful unavailable states; they do not collect patient information, accept payments, or expose records. No new database was provisioned and no existing database was modified.
 
 ## Required connection action
-In Lovable, open Cloud → **Already have a Supabase project? Connect it here** and link the existing `nohpalyybvjmbryimrrt` project (https://nohpalyybvjmbryimrrt.supabase.co). Do not enable a new Cloud database. This environment's backend tooling cannot attach the existing project from chat. No private or service-role key is required in frontend code.
+The app uses the PHYSIO Supabase project `ussqspqymblfruqsedzv` (see "Backend" below). Do not enable a separate Cloud database. No service-role key is used in frontend code.
 
 ## Confirmed integration contracts (pending implementation)
 - Auth: `signInWithPassword({ email, password })`, `getSession()`, `signOut()`.
