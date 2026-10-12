@@ -9,5 +9,5 @@
 - [x] Document the static-site port boundary and refined interactions.
 - [x] Record user-supplied verified PHYSIO contracts and source contact details.
 - [ ] Integrate existing booking, pricing, Auth and authorized admin flows — blocked on linking the existing project in Lovable without provisioning a new database.
-- [ ] Replace illustrative content, remove fake-success paths, and document production setup.
+- [x] Replace illustrative content, remove fake-success paths, and document production setup.
 - [ ] Verify production journeys and sync integration branch — blocked on existing backend connection and target Git connection.

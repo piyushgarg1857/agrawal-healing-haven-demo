@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
 export const Route = createFileRoute("/booking")({
-  validateSearch: (s: Record<string, unknown>): { service?: string } => typeof s.service === "string" ? { service: s.service } : {},
+  validateSearch: (s: Record<string, unknown>): { service?: string } => typeof s["service"] === "string" ? { service: s["service"] } : {},
   head: () => ({ meta: [
     { title: "Arrange your visit | Dr. Agrawal’s Physiotherapy Centre" },
     { name: "description", content: "Contact Dr. Agrawal’s Physiotherapy Centre to arrange your visit. Online booking is currently unavailable." },
