@@ -111,7 +111,8 @@ function Booking() {
           </div>
           <label><span className="field-label">UPI transaction reference</span><input className="form-control" value={reference} onChange={e => setReference(e.target.value)} inputMode="text" autoComplete="off" required /></label>
           {error && <p role="alert" className="form-error">{error}</p>}
-          <div className="hero-actions"><Button type="submit" size="lg" disabled={busy}>{busy && <Loader2 className="animate-spin" />} Submit reference</Button></div>
+          <div className="hero-actions"><Button type="submit" size="lg" disabled={busy}>{busy && <Loader2 className="animate-spin" />} Submit reference</Button>
+            <Button type="button" variant="outline" size="lg" onClick={startOver} disabled={busy}>Start a new request</Button></div>
         </form>}
 
         {step === "done" && <div>
