@@ -96,6 +96,7 @@ function Booking() {
                 <br />
                 Reference: DEMO-1043
               </p>
+              {reference && <p>Demo transaction reference: {reference}</p>}
               <p className="small-note">
                 In the proposed live flow, clinic staff would verify availability and any UPI
                 transaction before confirming your appointment.

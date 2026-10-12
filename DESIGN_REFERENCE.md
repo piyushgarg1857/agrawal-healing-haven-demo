@@ -36,3 +36,4 @@ Service offerings, demo prices, actual clinic/team photographs, therapist creden
 
 ## Verification
 Desktop and mobile pages were inspected. The complete fictional booking flow and simulated admin payment confirmation were exercised. Mobile navigation, service metadata and horizontal overflow checks passed. Existing routing tests passed. A low-contrast appointment-link issue and crowded mobile concept label were found and corrected during visual review.
+The refinement was checked at desktop, 390px and 320px widths, including keyboard skip navigation, Escape-to-close navigation, booking step focus, preserved movement goals, full fictional request and admin verification, and reduced-motion styling; no browser runtime errors were observed.

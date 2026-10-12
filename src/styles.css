@@ -1733,6 +1733,11 @@ td small {
     gap: 14px;
     font-size: 9px;
   }
+  .hero-reassurance span {
+    background: var(--background);
+    padding: 3px 5px;
+    color: var(--primary);
+  }
   .photo-label {
     right: 12px;
     bottom: 10px;
