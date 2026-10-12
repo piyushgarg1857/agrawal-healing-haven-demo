@@ -22,13 +22,6 @@ export function SiteHeader() {
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <div className="concept-strip">
-        <span className="status-dot" /> DESIGN CONCEPT
-        <span className="concept-caption">A thoughtful new direction in care</span>
-        <Link to="/admin">
-          Admin preview <ArrowUpRight size={12} />
-        </Link>
-      </div>
       <header className="site-header" onKeyDown={(event) => {
         if (event.key === "Escape" && open) {
           setOpen(false);
@@ -111,19 +104,19 @@ export function SiteFooter() {
           <a href="/#contact">Location & contact</a>
         </div>
         <div>
-          <h4>Concept previews</h4>
+          <h4>Clinic administration</h4>
           <Link to="/admin">
-            Admin dashboard <ArrowUpRight size={14} />
+            Admin access <ArrowUpRight size={14} />
           </Link>
           <span className="footer-note">
-            Illustrative content only.
+            Online booking is currently unavailable.
             <br />
-            No live booking or payment connection.
+            Please call to arrange your visit.
           </span>
         </div>
       </div>
       <div className="container footer-bottom">
-        <span>© 2026 Dr. Agrawal’s Physiotherapy Centre · Design reference</span>
+        <span>© 2026 Dr. Agrawal’s Physiotherapy Centre</span>
         <span>Care starts with a conversation.</span>
       </div>
     </footer>
