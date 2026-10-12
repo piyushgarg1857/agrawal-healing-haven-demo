@@ -21,6 +21,7 @@ vi.mock("@supabase/supabase-js", () => ({
 }));
 
 import * as be from "@/lib/physio-backend";
+import { describeStatus, shortReference } from "@/lib/booking-status";
 import { parseSavedBooking, validateFee, validatePatient, validateReference } from "@/lib/booking-validation";
 
 beforeEach(() => { calls.rpc = []; calls.from = []; rpcResult = { data: null, error: null }; tableResult = { data: [], error: null }; });
@@ -102,5 +103,32 @@ describe("validation", () => {
     expect(parseSavedBooking("{bad")).toBeNull();
     expect(parseSavedBooking(JSON.stringify({ id: "1", token: "t" }))).toBeNull();
     expect(parseSavedBooking(JSON.stringify({ id: "1", token: "t", serviceId: "sports", amount: 900 }))).not.toBeNull();
+  });
+});
+
+describe("booking status", () => {
+  it("looks up status by opaque token through the anon RPC only", async () => {
+    rpcResult = { data: [{ status: "pending", service: "consultation", amount: "500", created_at: "2026-10-12T00:00:00Z", payment_submitted: false, appointment_confirmed: false }], error: null };
+    const r = await be.getBookingStatus("a".repeat(32));
+    expect(calls.rpc[0]).toEqual(["get_physio_booking_status", { p_booking_token: "a".repeat(32) }]);
+    expect(calls.from).not.toContain("bookings");
+    expect(r?.amount).toBe(500);
+    expect(Object.keys(r ?? {})).not.toEqual(expect.arrayContaining(["patient_name"]));
+  });
+  it("returns null for an unknown code", async () => {
+    rpcResult = { data: [], error: null };
+    await expect(be.getBookingStatus("b".repeat(32))).resolves.toBeNull();
+  });
+  it("never calls a booking confirmed unless staff recorded it", () => {
+    expect(describeStatus("pending").message).toMatch(/not confirmed yet/);
+    expect(describeStatus("pending_verification").message).toBe("Payment submitted for verification — appointment still pending clinic confirmation.");
+    expect(describeStatus("completed").label).not.toMatch(/Appointment confirmed/);
+    expect(describeStatus("completed", true).label).toBe("Appointment confirmed");
+    expect(describeStatus("pending", true).label).not.toMatch(/confirmed/i);
+    expect(describeStatus("cancelled", true).label).toBe("Cancelled");
+  });
+  it("explains a missing lookup function instead of failing silently", () => {
+    expect(be.friendlyError({ code: "PGRST202", message: "Could not find the function public.get_physio_booking_status" })).toMatch(/not yet enabled/);
+    expect(shortReference("1a2b3c4d-0000")).toBe("1A2B3C4D");
   });
 });
