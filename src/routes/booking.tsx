@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
 import { friendlyError, getPrices, saveBooking, submitPaymentReference, UPI_ID, UPI_PAYEE } from "@/lib/physio-backend";
+import { parseSavedBooking, validatePatient, validateReference, type SavedBooking } from "@/lib/booking-validation";
 
 export const Route = createFileRoute("/booking")({
   validateSearch: (s: Record<string, unknown>): { service?: string } => typeof s["service"] === "string" ? { service: s["service"] } : {},
@@ -27,7 +28,7 @@ function Booking() {
   const [step, setStep] = useState<Step>("details");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [booking, setBooking] = useState<{ id: string; token: string } | null>(null);
+  const [booking, setBooking] = useState<SavedBooking | null>(null);
   const [reference, setReference] = useState("");
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -40,30 +41,41 @@ function Booking() {
   }, []);
   useEffect(() => { heading.current?.focus(); }, [step]);
   useEffect(() => {
-    try { const saved = sessionStorage.getItem("physio-booking"); if (saved) { const b = JSON.parse(saved) as { id: string; token: string }; if (b.id && b.token) { setBooking(b); setStep("pay"); } } } catch { /* ignore */ }
+    let saved: SavedBooking | null = null;
+    try { saved = parseSavedBooking(sessionStorage.getItem("physio-booking")); } catch { /* storage unavailable */ }
+    if (saved) { setBooking(saved); setServiceId(saved.serviceId); setStep("pay"); }
   }, []);
 
   const service = services.find(s => s.id === serviceId) ?? services[0]!;
-  const amount = prices[serviceId] ?? service.price;
+  // Once a request exists, show the amount recorded at creation, not a later fee change.
+  const amount = booking?.amount ?? prices[serviceId] ?? service.price;
 
   async function submitDetails(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setError(null);
     const f = new FormData(e.currentTarget);
     const name = String(f.get("name") ?? "").trim(), email = String(f.get("email") ?? "").trim(), phone = String(f.get("phone") ?? "").trim();
-    if (name.length < 2 || !/^\S+@\S+\.\S+$/.test(email) || !/^[+\d][\d\s-]{7,15}$/.test(phone)) { setError("Please enter your full name, a valid email and a valid phone number."); return; }
+    const invalid = validatePatient(name, email, phone);
+    if (invalid) { setError(invalid); return; }
     setBusy(true);
     try {
       const row = await saveBooking({ patient_name: name, patient_email: email, patient_phone: phone, service: serviceId });
-      setBooking(row); setStep("pay");
-      try { sessionStorage.setItem("physio-booking", JSON.stringify(row)); } catch { /* optional */ }
+      const saved: SavedBooking = { ...row, serviceId, amount: prices[serviceId] ?? service.price };
+      setBooking(saved); setStep("pay");
+      try { sessionStorage.setItem("physio-booking", JSON.stringify(saved)); } catch { /* optional */ }
     } catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
+  }
+
+  function startOver() {
+    try { sessionStorage.removeItem("physio-booking"); } catch { /* optional */ }
+    setBooking(null); setReference(""); setError(null); setStep("details");
   }
 
   async function submitReference(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); setError(null);
     const ref = reference.trim();
-    if (!/^[A-Za-z0-9]{6,40}$/.test(ref)) { setError("Enter the UPI transaction reference (letters and numbers, 6–40 characters)."); return; }
-    if (!booking) return;
+    const invalid = validateReference(ref);
+    if (invalid) { setError(invalid); return; }
+    if (!booking) { setError("Your booking session has expired. Please start a new request or call the clinic."); return; }
     setBusy(true);
     try { await submitPaymentReference(booking.id, booking.token, ref); setStep("done"); try { sessionStorage.removeItem("physio-booking"); } catch { /* optional */ } }
     catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
