@@ -79,13 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Dr. Agrawal’s Physiotherapy Centre" },
-      { name: "description", content: "Thoughtful physiotherapy care — a design reference concept." },
-      
+      {
+        name: "description",
+        content: "Thoughtful physiotherapy care — a design reference concept.",
+      },
+
       { property: "og:title", content: "Dr. Agrawal’s Physiotherapy Centre" },
-      { property: "og:description", content: "Thoughtful physiotherapy care — a design reference concept." },
+      {
+        property: "og:description",
+        content: "Thoughtful physiotherapy care — a design reference concept.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      
     ],
     links: [
       {
@@ -93,7 +98,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
