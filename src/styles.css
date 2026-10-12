@@ -126,7 +126,38 @@ svg {
   justify-content: center;
   gap: 9px;
   font-size: 10px;
-  letter-spacing: 1px;
+  letter-spacing: 0;
+}
+.concept-caption {
+  border-left: 1px solid var(--border);
+  padding-left: 12px;
+}
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 16px;
+  z-index: 100;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 12px 18px;
+  border-radius: var(--radius);
+  transform: translateY(-150%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+.contact-section :focus-visible,
+.site-footer :focus-visible {
+  outline-color: var(--secondary);
+}
+#main-content:focus,
+.booking-step:focus,
+.confirmation:focus {
+  outline: none;
 }
 .concept-strip a {
   position: absolute;
@@ -168,13 +199,16 @@ svg {
   align-items: center;
   gap: 10px;
   line-height: 1.2;
+  min-width: 0;
 }
+.brand > span:last-child { min-width: 0; }
 .brand-symbol {
   width: 39px;
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .brand-symbol img {
   max-height: 46px;
@@ -282,6 +316,10 @@ svg {
   max-width: 570px;
   line-height: 1.16;
 }
+.hero h1 > span {
+  display: block;
+  color: var(--primary);
+}
 .hero h1 em {
   font-style: normal;
   color: var(--primary);
@@ -298,6 +336,7 @@ svg {
   gap: 19px;
   align-items: center;
   margin-top: 29px;
+  flex-wrap: wrap;
 }
 .hero-actions > a {
   font-size: 12px;
@@ -392,7 +431,7 @@ svg {
 }
 .service-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 .service-card {
@@ -407,6 +446,9 @@ svg {
 }
 .service-card:hover {
   transform: translateY(-4px);
+  border-color: var(--primary);
+}
+.service-card:focus-visible {
   border-color: var(--primary);
 }
 .service-icon {
@@ -1597,8 +1639,9 @@ td small {
     padding-left: 24px;
     max-width: 100%;
     font-size: 7px;
-    letter-spacing: 0.6px;
+    letter-spacing: 0;
   }
+  .concept-caption { display: none; }
   .concept-strip .strip-divider,
   .concept-strip .strip-divider + span {
     display: none;
@@ -1606,6 +1649,8 @@ td small {
   .header-inner {
     padding: 17px 20px;
     gap: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
   .brand {
     gap: 7px;
@@ -1625,9 +1670,7 @@ td small {
     max-height: 36px;
   }
   .header-actions > a {
-    height: 34px;
-    padding: 0 12px;
-    font-size: 10px;
+    display: none;
   }
   .header-actions > a svg {
     display: none;
@@ -1636,7 +1679,7 @@ td small {
     gap: 1px;
   }
   .hero {
-    min-height: 700px;
+    min-height: 625px;
     align-items: flex-start;
   }
   .hero-image {
@@ -1665,7 +1708,7 @@ td small {
     letter-spacing: 1.6px;
   }
   .hero h1 {
-    font-size: 41px;
+    font-size: 36px;
     line-height: 1.18;
     max-width: 350px;
   }
@@ -1689,6 +1732,11 @@ td small {
     margin-top: 23px;
     gap: 14px;
     font-size: 9px;
+  }
+  .hero-reassurance span {
+    background: var(--background);
+    padding: 3px 5px;
+    color: var(--primary);
   }
   .photo-label {
     right: 12px;
@@ -1736,6 +1784,7 @@ td small {
   }
   .service-grid {
     gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .service-card {
     padding: 20px 16px;
@@ -2009,6 +2058,12 @@ td small {
     padding-left: 12px;
     padding-right: 12px;
   }
+}
+@media (max-width: 380px) {
+  .service-grid { grid-template-columns: minmax(0, 1fr); }
+  .hero-actions { gap: 14px; }
+  .hero h1 { font-size: 32px; }
+  .hero-reassurance { flex-wrap: wrap; gap: 6px 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html {

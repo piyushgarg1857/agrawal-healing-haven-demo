@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowLeft, ShieldCheck, Info, Check, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
@@ -36,9 +36,19 @@ function Booking() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
   const [consent, setConsent] = useState(false);
   const [reference, setReference] = useState("");
   const [done, setDone] = useState(false);
+  const stepHeading = useRef<HTMLDivElement>(null);
+  const previousStage = useRef("0-false");
+  useEffect(() => {
+    const stage = `${step}-${done}`;
+    if (previousStage.current !== stage) {
+      stepHeading.current?.focus();
+      previousStage.current = stage;
+    }
+  }, [step, done]);
   const service = services.find((s) => s.id === serviceId) ?? services[0];
   if (!service) return null;
   const dates: Array<[string, string]> = [
@@ -57,7 +67,7 @@ function Booking() {
         title={done ? "A thoughtful start to your care." : "Let’s plan your first visit."}
         description="Choose the care you need, find a suitable time, and share a few details."
       />
-      <main className="container booking-layout">
+      <main id="main-content" tabIndex={-1} className="container booking-layout">
         <div className="booking-main">
           <div className="demo-notice">
             <Info />
@@ -67,7 +77,7 @@ function Booking() {
             </span>
           </div>
           {done ? (
-            <div className="confirmation" aria-live="polite">
+            <div className="confirmation" ref={stepHeading} tabIndex={-1} aria-live="polite">
               <div className="confirmation-icon">
                 <Check />
               </div>
@@ -86,6 +96,7 @@ function Booking() {
                 <br />
                 Reference: DEMO-1043
               </p>
+              {reference && <p>Demo transaction reference: {reference}</p>}
               <p className="small-note">
                 In the proposed live flow, clinic staff would verify availability and any UPI
                 transaction before confirming your appointment.
@@ -110,7 +121,7 @@ function Booking() {
                   </div>
                 ))}
               </div>
-              <div className="booking-step">
+              <div className="booking-step" ref={stepHeading} tabIndex={-1}>
                 {step === 0 && (
                   <>
                     <h2>What can we help you with?</h2>
@@ -244,6 +255,8 @@ function Booking() {
                         </span>
                         <textarea
                           className="form-control"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
                           placeholder="Share fictional movement goals — not real health information."
                           maxLength={500}
                         />
@@ -287,6 +300,12 @@ function Booking() {
                       <div className="summary-line">
                         <span>Email</span>
                         <strong>{email}</strong>
+                      </div>
+                    )}
+                    {notes && (
+                      <div className="summary-line">
+                        <span>Movement goals</span>
+                        <strong>{notes}</strong>
                       </div>
                     )}
                     <div className="payment-explanation">

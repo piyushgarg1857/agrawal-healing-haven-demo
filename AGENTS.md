@@ -14,3 +14,4 @@
 - Use shared clinic navigation and semantic tokens in the global stylesheet to keep all concept views visually consistent.
 - Keep sample services and fictional admin records in a browser-safe data module so display screens share one illustrative source.
 - Use leaf-route metadata for every content page and derive the favicon from the active clinic logo.
+- Treat this app as a presentation reference for a later static-site port; keep demo interactions isolated so no existing booking/admin handlers or integration contracts are replaced.
