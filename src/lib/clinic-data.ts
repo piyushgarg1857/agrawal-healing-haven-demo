@@ -13,8 +13,7 @@ export const services = [
     id: "musculoskeletal",
     name: "Musculoskeletal physiotherapy",
     short: "Get back to the activities you love.",
-    description:
-      "Assessment and care for muscle, joint and movement concerns.",
+    description: "Assessment and care for muscle, joint and movement concerns.",
     icon: Bone,
     price: 800,
   },
@@ -22,8 +21,7 @@ export const services = [
     id: "neurological",
     name: "Neurological physiotherapy",
     short: "Support for your next step in recovery.",
-    description:
-      "Movement and balance support tailored to neurological rehabilitation needs.",
+    description: "Movement and balance support tailored to neurological rehabilitation needs.",
     icon: HeartPulse,
     price: 1000,
   },
@@ -31,8 +29,7 @@ export const services = [
     id: "pediatric",
     name: "Pediatric physiotherapy",
     short: "Care that moves at your pace.",
-    description:
-      "Assessment of children’s movement needs, with guidance for families.",
+    description: "Assessment of children’s movement needs, with guidance for families.",
     icon: Activity,
     price: 700,
   },
@@ -40,8 +37,7 @@ export const services = [
     id: "sports",
     name: "Sports physiotherapy",
     short: "Make everyday movement feel easier.",
-    description:
-      "Assessment and rehabilitation for sports-related movement concerns.",
+    description: "Assessment and rehabilitation for sports-related movement concerns.",
     icon: Dumbbell,
     price: 900,
   },
