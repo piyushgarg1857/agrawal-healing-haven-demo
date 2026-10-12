@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
 import { validateFee } from "@/lib/booking-validation";
-import { backend, friendlyError, getAllBookings, getPrices, isStaff, savePrices, updateBookingStatus, type Booking, type BookingStatus } from "@/lib/physio-backend";
+import { backend, confirmAppointment, friendlyError, getAllBookings, getPrices, isStaff, savePrices, updateBookingStatus, type Booking, type BookingStatus } from "@/lib/physio-backend";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin")({
   ] }), component: Admin,
 });
 
-const statusLabel: Record<string, string> = { pending: "Awaiting payment", pending_verification: "Needs verification", completed: "Verified", cancelled: "Cancelled" };
+const staffLabel = (r: Booking) => r.status === "pending" ? "Awaiting payment reference" : r.status === "pending_verification" ? "Needs payment verification" : r.status === "completed" ? (r.appointment_confirmed_at ? "Appointment confirmed" : "Payment verified — appointment not confirmed") : r.status === "cancelled" ? "Cancelled" : r.status;
 
 function Admin() {
   const [session, setSession] = useState<Session | null>(null);
@@ -88,6 +88,11 @@ function Dashboard({ email, userId }: { email: string; userId: string }) {
     try { await updateBookingStatus(id, status); setRows(r => (r ?? []).map(x => x.id === id ? { ...x, status } : x)); setNotice("Status updated."); }
     catch (err) { setError(friendlyError(err)); } finally { setBusyId(null); }
   }
+  async function onConfirm(id: Booking["id"]) {
+    setBusyId(id); setNotice(null); setError(null);
+    try { const at = await confirmAppointment(id); setRows(r => (r ?? []).map(x => x.id === id ? { ...x, appointment_confirmed_at: at } : x)); setNotice("Appointment marked as confirmed."); }
+    catch (err) { setError(friendlyError(err)); } finally { setBusyId(null); }
+  }
   async function onSavePrices(e: FormEvent) {
     e.preventDefault(); setNotice(null); setError(null);
     const list = services.map(s => ({ service: s.id, price: Number(prices[s.id]) }));
@@ -109,17 +114,18 @@ function Dashboard({ email, userId }: { email: string; userId: string }) {
     {error && <p role="alert" className="form-error">{error}</p>}
     {notice && <p role="status">{notice}</p>}
     <h2>Bookings</h2>
-    <p className="small-note">Check each UPI reference in the clinic’s bank/UPI app before marking it verified. Nothing is verified automatically.</p>
+    <p className="small-note">Check each UPI reference in the clinic’s bank/UPI app before marking it verified. Nothing is verified automatically. Use “Appointment agreed” only after you have agreed a date and time with the patient by phone.</p>
     {rows === null ? <p><Loader2 className="inline animate-spin" /> Loading bookings…</p> : rows.length === 0 ? <p>No bookings to show.</p> :
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Received</th><th>Patient</th><th>Service</th><th>Amount</th><th>UPI reference</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>{rows.map(r => <tr key={String(r.id)}>
           <td>{new Date(r.created_at).toLocaleString("en-IN")}</td>
           <td>{r.patient_name}<br /><a href={`tel:${r.patient_phone}`}>{r.patient_phone}</a><br /><a href={`mailto:${r.patient_email}`}>{r.patient_email}</a></td>
           <td>{services.find(s => s.id === r.service)?.name ?? r.service}</td>
-          <td>₹{r.amount}</td><td>{r.payment_id ?? "—"}</td><td>{statusLabel[r.status] ?? r.status}</td>
+          <td>₹{r.amount}</td><td>{r.payment_id ?? "—"}</td><td>{staffLabel(r)}</td>
           <td>{(r.status === "pending" || r.status === "pending_verification") && <div className="hero-actions">
             {r.status === "pending_verification" && <Button size="sm" disabled={busyId === r.id} onClick={() => void setStatus(r.id, "completed")}>Mark verified</Button>}
-            <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => void setStatus(r.id, "cancelled")}>Cancel</Button></div>}</td>
+            <Button size="sm" variant="outline" disabled={busyId === r.id} onClick={() => void setStatus(r.id, "cancelled")}>Cancel</Button></div>}
+            {r.status === "completed" && !r.appointment_confirmed_at && <Button size="sm" disabled={busyId === r.id} onClick={() => void onConfirm(r.id)}>Appointment agreed</Button>}</td>
         </tr>)}</tbody></table></div>}
     <form onSubmit={onSavePrices}><h2>Service fees (₹)</h2>
       <div className="form-grid">{services.map(s => <label key={s.id}><span className="field-label">{s.name}</span>

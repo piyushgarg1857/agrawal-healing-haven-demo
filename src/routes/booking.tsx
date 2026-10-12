@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SiteHeader, SiteFooter, PageIntro } from "@/components/clinic/site-layout";
 import { services } from "@/lib/clinic-data";
 import { friendlyError, getPrices, saveBooking, submitPaymentReference, UPI_ID, UPI_PAYEE } from "@/lib/physio-backend";
+import { BookingReference } from "@/components/clinic/booking-reference";
 import { parseSavedBooking, validatePatient, validateReference, type SavedBooking } from "@/lib/booking-validation";
 
 export const Route = createFileRoute("/booking")({
@@ -30,6 +31,7 @@ function Booking() {
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState<SavedBooking | null>(null);
   const [reference, setReference] = useState("");
+  const [done, setDone] = useState<SavedBooking | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -77,7 +79,7 @@ function Booking() {
     if (invalid) { setError(invalid); return; }
     if (!booking) { setError("Your booking session has expired. Please start a new request or call the clinic."); return; }
     setBusy(true);
-    try { await submitPaymentReference(booking.id, booking.token, ref); setStep("done"); try { sessionStorage.removeItem("physio-booking"); } catch { /* optional */ } }
+    try { await submitPaymentReference(booking.id, booking.token, ref); setDone(booking); setStep("done"); try { sessionStorage.removeItem("physio-booking"); } catch { /* optional */ } }
     catch (err) { setError(friendlyError(err)); } finally { setBusy(false); }
   }
 
@@ -104,7 +106,7 @@ function Booking() {
 
         {step === "pay" && <form onSubmit={submitReference} noValidate>
           <h2 ref={heading} tabIndex={-1}>Pay ₹{amount} by UPI</h2>
-          <p>Your booking request has been saved with status “pending”. It is not confirmed until clinic staff verify your payment.</p>
+          {booking && <BookingReference id={booking.id} token={booking.token} status="pending" serviceName={service.name} amount={amount} />}
           <div className="payment-explanation"><h3><ShieldCheck /> How to pay</h3>
             <ol><li>Pay <strong>₹{amount}</strong> to UPI ID <strong>{UPI_ID}</strong> ({UPI_PAYEE}).</li><li>Copy the transaction reference (UTR) from your UPI app.</li><li>Enter it below. Staff check it manually — this is not automatic.</li></ol>
             <Button asChild variant="outline"><a href={upiLink}>Open UPI app</a></Button>
@@ -116,8 +118,9 @@ function Booking() {
         </form>}
 
         {step === "done" && <div>
-          <h2 ref={heading} tabIndex={-1}>Reference submitted — pending manual verification</h2>
-          <p>Thank you. Your payment has <strong>not</strong> been confirmed yet. Clinic staff will check the reference and contact you to confirm your appointment time.</p>
+          <h2 ref={heading} tabIndex={-1}>Payment submitted for verification</h2>
+          <p>Payment submitted for verification — appointment still pending clinic confirmation. Your payment has <strong>not</strong> been confirmed yet; clinic staff check each reference manually and will contact you to agree a date and time.</p>
+          {done && <BookingReference id={done.id} token={done.token} status="pending_verification" serviceName={service.name} amount={done.amount} />}
           <div className="hero-actions"><Button asChild variant="outline"><a href="tel:+917046507918"><Phone /> Call the clinic</a></Button></div>
         </div>}
       </div>
