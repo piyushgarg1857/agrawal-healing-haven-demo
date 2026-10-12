@@ -22,10 +22,21 @@ export function backend(): SupabaseClient {
   return client;
 }
 
+// Public booking RPCs are granted to `anon` only. A staff session stored by `backend()` would make
+// supabase-js send that user's JWT (role `authenticated`, no EXECUTE) and fail with 42501, so
+// patient-facing calls always use this separate, session-less client.
+let publicClient: SupabaseClient | null = null;
+export function publicBackend(): SupabaseClient {
+  if (!publicClient) publicClient = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "physio-public-anon" } });
+  return publicClient;
+}
+
 /** Human-readable error; never echoes patient data. */
 export function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : typeof e === "object" && e && "message" in e ? String((e as { message: unknown }).message) : "";
   const code = typeof e === "object" && e && "code" in e ? String((e as { code: unknown }).code) : "";
+  // Validation messages raised by the booking RPCs are fixed strings that never contain input.
+  if (code === "P0001" && /^(Please enter a valid [a-z ]+|Selected service is not available)$/i.test(msg)) return msg + ".";
   if (code === "PGRST202" || /Could not find the function/i.test(msg)) return "Online booking is not yet enabled on the clinic system. Please call the clinic.";
   if (/fetch|network|Failed to fetch|resolve/i.test(msg)) return "The clinic system could not be reached. Please call the clinic or try again later.";
   if (code === "42501" || /permission|row-level security|policy/i.test(msg)) return "This action is not permitted by the clinic system's security settings.";
@@ -36,13 +47,13 @@ export function friendlyError(e: unknown): string {
 }
 
 export async function getPrices(): Promise<PriceRow[]> {
-  const { data, error } = await backend().from("service_prices").select("service, price");
+  const { data, error } = await publicBackend().from("service_prices").select("service, price");
   if (error) throw error;
   return (data ?? []) as PriceRow[];
 }
 
 export async function saveBooking(input: { patient_name: string; patient_email: string; patient_phone: string; service: string }) {
-  const { data, error } = await backend().rpc("create_physio_booking", {
+  const { data, error } = await publicBackend().rpc("create_physio_booking", {
     p_patient_name: input.patient_name, p_patient_email: input.patient_email, p_patient_phone: input.patient_phone, p_service: input.service,
   });
   if (error) throw error;
@@ -52,7 +63,7 @@ export async function saveBooking(input: { patient_name: string; patient_email: 
 }
 
 export async function submitPaymentReference(id: string, token: string, reference: string) {
-  const { data, error } = await backend().rpc("submit_physio_payment_reference", { p_booking_id: id, p_booking_token: token, p_payment_reference: reference });
+  const { data, error } = await publicBackend().rpc("submit_physio_payment_reference", { p_booking_id: id, p_booking_token: token, p_payment_reference: reference });
   if (error) throw error;
   if (data === false) throw Object.assign(new Error("permission"), { code: "42501" });
 }
