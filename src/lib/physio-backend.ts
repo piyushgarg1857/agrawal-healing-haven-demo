@@ -37,6 +37,8 @@ export function friendlyError(e: unknown): string {
   const code = typeof e === "object" && e && "code" in e ? String((e as { code: unknown }).code) : "";
   // Validation messages raised by the booking RPCs are fixed strings that never contain input.
   if (code === "P0001" && /^(Please enter a valid [a-z ]+|Selected service is not available)$/i.test(msg)) return msg + ".";
+  if (code === "42703" || code === "PGRST204" || /appointment_confirmed_at/i.test(msg)) return "Appointment confirmation is not yet enabled on the clinic system (database update pending).";
+  if (code === "PGRST202" && /get_physio_booking_status/.test(msg)) return "Online status checks are not yet enabled on the clinic system. Please call the clinic.";
   if (code === "PGRST202" || /Could not find the function/i.test(msg)) return "Online booking is not yet enabled on the clinic system. Please call the clinic.";
   if (/fetch|network|Failed to fetch|resolve/i.test(msg)) return "The clinic system could not be reached. Please call the clinic or try again later.";
   if (code === "42501" || /permission|row-level security|policy/i.test(msg)) return "This action is not permitted by the clinic system's security settings.";
@@ -96,4 +98,21 @@ export async function savePrices(rows: PriceRow[]) {
     if (error) throw error;
     if (!data || data.length === 0) throw Object.assign(new Error("permission"), { code: "42501" });
   }
+}
+
+/** Token-only lookup; returns no patient contact details. null = no booking for that code. */
+export async function getBookingStatus(token: string): Promise<PublicStatus | null> {
+  const { data, error } = await publicBackend().rpc("get_physio_booking_status", { p_booking_token: token });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as PublicStatus | undefined;
+  return row ? { ...row, amount: Number(row.amount) } : null;
+}
+
+/** Staff only (RLS): record that the clinic has agreed the appointment with the patient. */
+export async function confirmAppointment(id: Booking["id"]): Promise<string> {
+  const at = new Date().toISOString();
+  const { data, error } = await backend().from("bookings").update({ appointment_confirmed_at: at }).eq("id", id).eq("status", "completed").select("id");
+  if (error) throw error;
+  if (!data || data.length === 0) throw Object.assign(new Error("permission"), { code: "42501" });
+  return at;
 }
